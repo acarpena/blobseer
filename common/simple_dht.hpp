@@ -1,8 +1,6 @@
 #ifndef __SIMPLE_DHT
 #define __SIMPLE_DHT
 
-#include <openssl/sha.h>
-
 #include "common/null_lock.hpp"
 #include "common/config.hpp"
 #include "rpc/rpc_client.hpp"
