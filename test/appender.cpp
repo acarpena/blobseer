@@ -39,12 +39,16 @@ int main(int argc, char **argv) {
     // fill buffer with the contents of a file
     unsigned int count = 0;
     ifstream ifs(argv[5], ifstream::in);
-    while (ifs.good() && count < TOTAL_SIZE)
-        big_zone[count++] = (char)ifs.get();
+    while (ifs.good() && count < TOTAL_SIZE) {
+        big_zone[count] = (char)ifs.get();
+    	count++;
+    }
     ifs.close();
     unsigned int file_size = count;
-    while (count < TOTAL_SIZE)
-	big_zone[count++] = big_zone[count - file_size];
+    while (count < TOTAL_SIZE) {
+	big_zone[count] = big_zone[count - file_size];
+	count++;
+    }
 
     // fill buffer with random data
     /*
