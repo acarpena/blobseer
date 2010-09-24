@@ -8,7 +8,7 @@ project (BLOBSEER)
 set(EXTERNAL_ROOT ~/deploy)
 
 # some global compiler flags
-add_definitions(-O2 -Wall -fno-strict-aliasing -D__ASSERT -D__INFO -D__BENCHMARK -DSOCK_TYPE=tcp)
+add_definitions(-O2 -Wall -fno-strict-aliasing -D__DEBUG -D__ASSERT -D__INFO -D__BENCHMARK -DSOCK_TYPE=tcp)
 
 # set the path to the cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -41,7 +41,10 @@ add_subdirectory (provider)
 add_subdirectory (vmanager)
 add_subdirectory (pmanager)
 add_subdirectory (lib)
-add_subdirectory (test)
+
 
 # The bindings are located in the "bindings" subdirectory
-add_subdirectory (bindings)
+ add_subdirectory (bindings)
+
+add_subdirectory (test)
+ 

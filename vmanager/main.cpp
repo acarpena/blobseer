@@ -44,14 +44,24 @@ int main(int argc, char *argv[]) {
     vmgr_server.register_rpc(VMGR_GETTICKET,
 			     (rpcserver_extcallback_t)boost::bind(&vmanagement::get_ticket, 
 								  boost::ref(vmgr), _1, _2, _3));
+    vmgr_server.register_rpc(VMGR_LIST_GETTICKET,
+			     (rpcserver_extcallback_t)boost::bind(&vmanagement::get_ticket_list,
+								  boost::ref(vmgr), _1, _2, _3));
+
     vmgr_server.register_rpc(VMGR_CREATE,
 			     (rpcserver_extcallback_t)boost::bind(&vmanagement::create, 
+								  boost::ref(vmgr), _1, _2, _3));
+    vmgr_server.register_rpc(VMGR_FCREATE,
+			     (rpcserver_extcallback_t)boost::bind(&vmanagement::fcreate,
 								  boost::ref(vmgr), _1, _2, _3));
     vmgr_server.register_rpc(VMGR_GETROOT,
 			     (rpcserver_extcallback_t)boost::bind(&vmanagement::get_root, 
 								  boost::ref(vmgr), _1, _2, _3));
     vmgr_server.register_rpc(VMGR_PUBLISH,
 			     (rpcserver_extcallback_t)boost::bind(&vmanagement::publish, 
+								  boost::ref(vmgr), _1, _2, _3));
+    vmgr_server.register_rpc(VMGR_LIST_PUBLISH,
+			     (rpcserver_extcallback_t)boost::bind(&vmanagement::publish_list,
 								  boost::ref(vmgr), _1, _2, _3));
     vmgr_server.register_rpc(VMGR_GETOBJNO,
 			     (rpcserver_extcallback_t)boost::bind(&vmanagement::get_objcount, 

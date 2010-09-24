@@ -27,6 +27,7 @@ public:
     ~object_handler();
 
     bool create(boost::uint64_t page_size, boost::uint32_t replica_count = 1);
+    bool fcreate(boost::uint32_t blob_id, boost::uint64_t page_size, boost::uint32_t replica_count = 1);
     bool clone(boost::int32_t id = 0, boost::int32_t version = 0);
     bool get_latest(boost::uint32_t id = 0);
 
@@ -34,6 +35,9 @@ public:
     bool get_locations(page_locations_t &loc, boost::uint64_t offset, boost::uint64_t size, boost::uint32_t version = 0);
     bool append(boost::uint64_t size, char *buffer);
     bool write(boost::uint64_t offset, boost::uint64_t size, char *buffer);
+
+    bool read_list(char *buffer, boost::uint64_t mem_size, int blob_list_count, boost::uint64_t offsets[], boost::uint64_t sizes[], boost::uint32_t version = 0);
+    bool write_list(char *buffer, boost::uint64_t mem_size, int blob_list_count, boost::uint64_t offsets[], boost::uint64_t sizes[], boost::uint32_t version = 0);
 
     boost::int32_t get_objcount() const;
 

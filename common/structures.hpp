@@ -11,143 +11,162 @@ static const unsigned int ROOT = 0, LEFT_CHILD = 1, RIGHT_CHILD = 2;
 
 class provider_desc {
 public:
-    std::string host, service;
+	std::string host, service;
 
-    provider_desc() { }
-    provider_desc(const std::string &h, const std::string &s) : host(h), service(s) { }
-    
-    bool empty() {
-	return host == "" && service == "";
-    }
+	provider_desc() { }
+	provider_desc(const std::string &h, const std::string &s) : host(h), service(s) { }
 
-    friend std::ostream &operator<<(std::ostream &out, const provider_desc &provider) {
-	out << "(" << provider.host << ", " << provider.service << ")";
-	return out;
-    }
+	bool empty() {
+		return host == "" && service == "";
+	}
 
-    template <class Archive> void serialize(Archive &ar, unsigned int) {
-	ar & host & service;
-    }
+	friend std::ostream &operator<<(std::ostream &out, const provider_desc &provider) {
+		out << "(" << provider.host << ", " << provider.service << ")";
+		return out;
+	}
+
+	template <class Archive> void serialize(Archive &ar, unsigned int) {
+		ar & host & service;
+	}
 };
 
 typedef std::vector<provider_desc> replica_list_t;
 
 class query_t {
 public:
-    boost::uint32_t id, version;
-    boost::uint64_t offset, size;
+	boost::uint32_t id, version;
+	boost::uint64_t offset, size;
 
-    friend std::ostream &operator<<(std::ostream &out, const query_t &query) {
-	out << "(" << query.id << ", " << query.version << ", " 
-	    << query.offset << ", " << query.size << ")";
-	return out;
-    }
-
-    query_t(boost::uint32_t i, boost::uint32_t v, boost::uint64_t o, boost::uint64_t s) :
-	id(i), version(v), offset(o), size(s) { }
-
-    query_t() : id(0), version(0), offset(0), size(0) { }
-
-    bool intersects(const query_t &second) const {
-	if (offset <= second.offset)
-	    return second.offset < offset + size;
-	else
-	    return offset < second.offset + second.size;
-    }
-
-    bool operator<(const query_t &second) const {
-	return version < second.version;
-    }
-
-    bool operator==(const query_t &second) const {
-	return id == second.id && version == second.version && 
-	    offset == second.offset && size == second.size;
-    }
-
-    bool empty() const {
-	return id == 0 && version == 0 && offset == 0 && size == 0;
-    }
-
-    unsigned int getParent(query_t &dest) const {
-	dest.id = id;
-	dest.version = version;
-	dest.size = 2 * size;
-	if (offset % dest.size == 0) {
-	    dest.offset = offset;
-	    return LEFT_CHILD;
-	} else {
-	    dest.offset = offset - size;
-	    return RIGHT_CHILD;
+	friend std::ostream &operator<<(std::ostream &out, const query_t &query) {
+		out << "(" << query.id << ", " << query.version << ", "
+				<< query.offset << ", " << query.size << ")";
+		return out;
 	}
-    }
-  
-    template <class Archive> void serialize(Archive &ar, unsigned int) {
-	ar & id & version & offset & size;
-    }
+
+	query_t(boost::uint32_t i, boost::uint32_t v, boost::uint64_t o, boost::uint64_t s) :
+		id(i), version(v), offset(o), size(s) { }
+
+	query_t() : id(0), version(0), offset(0), size(0) { }
+
+	bool intersects(const query_t &second) const {
+		if (offset <= second.offset)
+			return second.offset < offset + size;
+		else
+			return offset < second.offset + second.size;
+	}
+
+	bool operator<(const query_t &second) const {
+		return version < second.version;
+	}
+
+	bool operator==(const query_t &second) const {
+		return id == second.id && version == second.version &&
+				offset == second.offset && size == second.size;
+	}
+	bool operator!=(const query_t &second) const {
+		return id != second.id || version != second.version ||
+				offset != second.offset || size == second.size;
+	}
+
+	bool empty() const {
+		return id == 0 && version == 0 && offset == 0 && size == 0;
+	}
+
+	unsigned int getParent(query_t &dest) const {
+		dest.id = id;
+		dest.version = version;
+		dest.size = 2 * size;
+		if (offset % dest.size == 0) {
+			dest.offset = offset;
+			return LEFT_CHILD;
+		} else {
+			dest.offset = offset - size;
+			return RIGHT_CHILD;
+		}
+	}
+
+	template <class Archive> void serialize(Archive &ar, unsigned int) {
+		ar & id & version & offset & size;
+	}
 };
 
 class root_t {
 public:
-    query_t node;
-    boost::uint32_t replica_count;
-    boost::uint64_t current_size, page_size;    
+	query_t node;
+	boost::uint32_t replica_count;
+	boost::uint64_t current_size, page_size;
 
-    root_t() : node(0, 0, 0, 0), replica_count(0), current_size(0), page_size(0) { }
+	root_t() : node(0, 0, 0, 0), replica_count(0), current_size(0), page_size(0) { }
 
-    root_t(boost::uint32_t i, boost::uint32_t v, boost::uint64_t ps, boost::uint64_t ms, boost::uint32_t rc) :
-	node(i, v, 0, ms), replica_count(rc), current_size(0), page_size(ps) { }
+	root_t(boost::uint32_t i, boost::uint32_t v, boost::uint64_t ps, boost::uint64_t ms, boost::uint32_t rc) :
+		node(i, v, 0, ms), replica_count(rc), current_size(0), page_size(ps) { }
 
-    bool empty() const {
-	return node.id == 0;
-    }
+	bool empty() const {
+		return node.id == 0;
+	}
 
-    template <class Archive> void serialize(Archive &ar, unsigned int) {
-	ar & node & page_size & current_size & replica_count;
-    }
+	template <class Archive> void serialize(Archive &ar, unsigned int) {
+		ar & node & page_size & current_size & replica_count;
+	}
 };
 
 class dhtnode_t {
 public:
-    bool is_leaf;
-    query_t left, right;
-    
-    dhtnode_t(bool leaf) : is_leaf(leaf) { }
+	bool is_leaf;
+	query_t left, right;
 
-    friend std::ostream &operator<<(std::ostream &out, const dhtnode_t &node) {
-	out << "(left = " << node.left << ", right = " << node.right;
-	if (node.is_leaf)
-	    out << ", node is leaf";
-	out << ")";
-	return out;
-    }
+	dhtnode_t(bool leaf) : is_leaf(leaf) { }
 
-    template <class Archive> void serialize(Archive &ar, unsigned int) {
-	ar & left & right & is_leaf;
-    }
+	friend std::ostream &operator<<(std::ostream &out, const dhtnode_t &node) {
+		out << "(left = " << node.left << ", right = " << node.right;
+		if (node.is_leaf)
+			out << ", node is leaf";
+		out << ")";
+		return out;
+	}
+
+	template <class Archive> void serialize(Archive &ar, unsigned int) {
+		ar & left & right & is_leaf;
+	}
+};
+
+class list_query_t {
+public:
+	typedef std::vector<metadata::query_t> query_enum_t;
+	query_enum_t queries;
+
+	friend std::ostream &operator<<(std::ostream &out, const list_query_t &list_query) {
+		for (unsigned int i = 0; i < list_query.queries.size(); i++)
+			out << list_query.queries[i];
+		return out;
+	}
+	template <class Archive> void serialize(Archive &ar, unsigned int) {
+		ar & queries;
+	}
 };
 
 }
 
 class vmgr_reply {    
 public:
-    typedef std::vector<metadata::query_t> siblings_enum_t;
-    siblings_enum_t left, right;
-    boost::uint32_t ticket;
-    boost::uint64_t root_size, append_offset;
-    metadata::root_t stable_root;
+	typedef std::vector<metadata::query_t> siblings_enum_t;
+	siblings_enum_t left, right;
+	boost::uint32_t ticket;
+	boost::uint64_t root_size, append_offset;
+	metadata::root_t stable_root;
 
-    vmgr_reply() : stable_root(0, 0, 0, 0, 0) { }
-    
-    static metadata::query_t search_list(siblings_enum_t &siblings, boost::uint64_t offset, boost::uint64_t size) {
-	for (unsigned int i = 0; i < siblings.size(); i++)
-	    if (siblings[i].offset == offset && siblings[i].size == size)
-		return siblings[i];
-	return metadata::query_t();
-    }
+	vmgr_reply() : stable_root(0, 0, 0, 0, 0) { }
 
-    template <class Archive> void serialize(Archive &ar, unsigned int) {
-	ar & stable_root & left & right & root_size & ticket & append_offset;
-    }
+	static metadata::query_t search_list(siblings_enum_t &siblings, boost::uint64_t offset, boost::uint64_t size) {
+		for (unsigned int i = 0; i < siblings.size(); i++)
+			if (siblings[i].offset == offset && siblings[i].size == size)
+				return siblings[i];
+		return metadata::query_t();
+	}
+
+	template <class Archive> void serialize(Archive &ar, unsigned int) {
+		ar & stable_root & left & right & root_size & ticket & append_offset;
+	}
 };
 
 #endif

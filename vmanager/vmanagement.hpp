@@ -7,17 +7,19 @@
 #include "common/null_lock.hpp"
 #include "common/structures.hpp"
 #include "rpc/rpc_meta.hpp"
+#include "boost/tuple/tuple.hpp"
 
 class vmanagement {
 public:
     class obj_info {
     public:
-	typedef std::pair<metadata::root_t, bool> root_flag_t;
+	typedef boost::tuple<metadata::root_t, bool, int> root_flag_t;
+	//typedef std::pair<metadata::query_t, unsigned int>
 	typedef std::pair<metadata::query_t, root_flag_t> interval_entry_t;
-	typedef std::map<metadata::query_t, root_flag_t> interval_list_t;
+	typedef std::multimap<metadata::query_t, root_flag_t> interval_list_t;
 
-	std::vector<metadata::root_t> roots;
-	interval_list_t intervals;
+	std::vector<metadata::root_t> roots; // Stable roots
+	interval_list_t intervals;			// Unpublished roots
 	boost::uint32_t current_ticket;
 	boost::uint64_t max_size, progress_size;
 
@@ -35,9 +37,15 @@ public:
 			 const std::string &sender);
     rpcreturn_t get_ticket(const rpcvector_t &params, rpcvector_t &result, 
 			   const std::string &sender);
+    rpcreturn_t get_ticket_list(const rpcvector_t &params, rpcvector_t &result,
+			   const std::string &sender);
+    rpcreturn_t publish_list(const rpcvector_t &params, rpcvector_t &result,
+			const std::string &sender);
     rpcreturn_t get_objcount(const rpcvector_t &params, rpcvector_t &result, 
 			     const std::string &sender);
     rpcreturn_t create(const rpcvector_t &params, rpcvector_t &result, 
+		       const std::string &sender);
+    rpcreturn_t fcreate(const rpcvector_t &params, rpcvector_t &result,
 		       const std::string &sender);
     rpcreturn_t publish(const rpcvector_t &params, rpcvector_t &result, 
 			const std::string &sender);
@@ -52,7 +60,8 @@ private:
     void compute_sibling_versions(vmgr_reply::siblings_enum_t &siblings,
 				  metadata::query_t &edge_node,
 				  obj_info::interval_list_t &intervals, 
-				  boost::uint64_t root_size);
+				  boost::uint64_t root_size,
+				  metadata::query_t except_this_query = metadata::query_t(0, 0, 0, 0));
     obj_hash_t obj_hash;
     boost::int32_t obj_count;
 

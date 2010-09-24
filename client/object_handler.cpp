@@ -5,492 +5,758 @@
 #include "vmanager/main.hpp"
 #include "object_handler.hpp"
 #include "replica_policy.hpp"
-
+#define __DEBUG
 #include "common/debug.hpp"
 
 using namespace std;
 
 object_handler::object_handler(const std::string &config_file) : latest_root(0, 0, 0, 0, 0) {
-    libconfig::Config cfg;
-    
-    try {
-        cfg.readFile(config_file.c_str());
-	// get dht port
-	std::string service;
-	if (!cfg.lookupValue("dht.service", service))
-	    throw std::runtime_error("object_handler::object_handler(): DHT port is missing/invalid");
-	// get dht gateways
-	libconfig::Setting &s = cfg.lookup("dht.gateways");
-	int ng = s.getLength();
-	if (!s.isList() || ng <= 0) 
-	    throw std::runtime_error("object_handler::object_handler(): Gateways are missing/invalid");
-	// get dht parameters
-	int replication, timeout, cache_size;
-	if (!cfg.lookupValue("dht.replication", replication) ||
-	    !cfg.lookupValue("dht.timeout", timeout) ||
-	    !cfg.lookupValue("dht.cachesize", cache_size))
-	    throw std::runtime_error("object_handler::object_handler(): DHT parameters are missing/invalid");
-	// build dht structure
-	dht = new dht_t(io_service, replication, timeout, cache_size);
-	for (int i = 0; i < ng; i++) {
-	    std::string stmp = s[i];
-	    dht->addGateway(stmp, service);
-	}
-	// get provider parameters
-	if (!cfg.lookupValue("provider.retry", retry_count))
-	    throw std::runtime_error("object_handler::object_handler(): Provider retry count is missing/invalid");
-	// get other parameters
-	if (!cfg.lookupValue("pmanager.host", publisher_host) ||
-	    !cfg.lookupValue("pmanager.service", publisher_service) ||
-	    !cfg.lookupValue("vmanager.host", vmgr_host) ||
-	    !cfg.lookupValue("vmanager.service", vmgr_service))
-	    throw std::runtime_error("object_handler::object_handler(): object_handler parameters are missing/invalid");
-	// complete object creation
-	query = new interval_range_query(dht);
-	direct_rpc = new rpc_client_t(io_service);
-    } catch(libconfig::FileIOException) {
-	throw std::runtime_error("object_handler::object_handler(): I/O error trying to parse config file: " + config_file);
-    } catch(libconfig::ParseException &e) {
-	std::ostringstream ss;
-	ss << "object_handler::object_handler(): Parse exception (line " << e.getLine() << "): " << e.getError();
-	throw std::runtime_error(ss.str());
-    } catch(std::runtime_error &e) {
-	throw e;
-    } catch(...) {
-	throw std::runtime_error("object_handler::object_handler(): Unknown exception");
-    }
+	libconfig::Config cfg;
 
-    // set the random number generator seed
-    rnd.seed(boost::posix_time::microsec_clock::local_time().time_of_day().total_nanoseconds());
-        
-    DBG("constructor init complete");
+	try {
+		cfg.readFile(config_file.c_str());
+		// get dht port
+		std::string service;
+		if (!cfg.lookupValue("dht.service", service))
+			throw std::runtime_error("object_handler::object_handler(): DHT port is missing/invalid");
+		// get dht gateways
+		libconfig::Setting &s = cfg.lookup("dht.gateways");
+		int ng = s.getLength();
+		if (!s.isList() || ng <= 0)
+			throw std::runtime_error("object_handler::object_handler(): Gateways are missing/invalid");
+		// get dht parameters
+		int replication, timeout, cache_size;
+		if (!cfg.lookupValue("dht.replication", replication) ||
+				!cfg.lookupValue("dht.timeout", timeout) ||
+				!cfg.lookupValue("dht.cachesize", cache_size))
+			throw std::runtime_error("object_handler::object_handler(): DHT parameters are missing/invalid");
+		// build dht structure
+		dht = new dht_t(io_service, replication, timeout, cache_size);
+		for (int i = 0; i < ng; i++) {
+			std::string stmp = s[i];
+			dht->addGateway(stmp, service);
+		}
+		// get provider parameters
+		if (!cfg.lookupValue("provider.retry", retry_count))
+			throw std::runtime_error("object_handler::object_handler(): Provider retry count is missing/invalid");
+		// get other parameters
+		if (!cfg.lookupValue("pmanager.host", publisher_host) ||
+				!cfg.lookupValue("pmanager.service", publisher_service) ||
+				!cfg.lookupValue("vmanager.host", vmgr_host) ||
+				!cfg.lookupValue("vmanager.service", vmgr_service))
+			throw std::runtime_error("object_handler::object_handler(): object_handler parameters are missing/invalid");
+		// complete object creation
+		query = new interval_range_query(dht);
+		direct_rpc = new rpc_client_t(io_service);
+	} catch(libconfig::FileIOException) {
+		throw std::runtime_error("object_handler::object_handler(): I/O error trying to parse config file: " + config_file);
+	} catch(libconfig::ParseException &e) {
+		std::ostringstream ss;
+		ss << "object_handler::object_handler(): Parse exception (line " << e.getLine() << "): " << e.getError();
+		throw std::runtime_error(ss.str());
+	} catch(std::runtime_error &e) {
+		throw e;
+	} catch(...) {
+		throw std::runtime_error("object_handler::object_handler(): Unknown exception");
+	}
+
+	// set the random number generator seed
+	rnd.seed(boost::posix_time::microsec_clock::local_time().time_of_day().total_nanoseconds());
+
+	DBG("constructor init complete");
 }
 
 object_handler::~object_handler() {
-    delete direct_rpc;
-    delete query;
-    delete dht;
+	delete direct_rpc;
+	delete query;
+	delete dht;
 }
 
 void object_handler::rpc_provider_callback(boost::int32_t call_type, buffer_wrapper page_key, 
-					   interval_range_query::replica_policy_t &repl, 
-					   buffer_wrapper buffer, bool &result,
-					   const rpcreturn_t &error, const rpcvector_t &val) {
-    if (error == rpcstatus::ok && val.size() == 1)
-	return;
+		interval_range_query::replica_policy_t &repl,
+		buffer_wrapper buffer, bool &result,
+		const rpcreturn_t &error, const rpcvector_t &val) {
+	if (error == rpcstatus::ok && val.size() == 1)
+		return;
 
-    metadata::provider_desc adv = repl.try_next();
-    if (adv.empty()) {
+	metadata::provider_desc adv = repl.try_next();
+	if (adv.empty()) {
+		INFO("could not fetch page: " << page_key << ", error is " << error
+				<< "; no more replicas - ABORTED");
+		result = false;
+		return;
+	}
+	rpcvector_t read_params;
+	read_params.push_back(page_key);
 	INFO("could not fetch page: " << page_key << ", error is " << error 
-	     << "; no more replicas - ABORTED");	
-	result = false;
-	return;
-    }
-    rpcvector_t read_params;
-    read_params.push_back(page_key);
-    INFO("could not fetch page: " << page_key << ", error is " << error 
-	 << "; trying next replica from: " << adv);
-    direct_rpc->dispatch(adv.host, adv.service, call_type, read_params,
-			 boost::bind(&object_handler::rpc_provider_callback, this, 
-				     call_type, page_key, 
-				     boost::ref(repl), buffer, boost::ref(result), _1, _2),
-			 rpcvector_t(1, buffer));
+			<< "; trying next replica from: " << adv);
+	direct_rpc->dispatch(adv.host, adv.service, call_type, read_params,
+			boost::bind(&object_handler::rpc_provider_callback, this,
+					call_type, page_key,
+					boost::ref(repl), buffer, boost::ref(result), _1, _2),
+					rpcvector_t(1, buffer));
 }
 
 void object_handler::rpc_write_callback(boost::dynamic_bitset<> &res, 
-					const metadata::provider_desc &adv,
-					buffer_wrapper key, buffer_wrapper value,
-					unsigned int k, unsigned int retries,
-					const rpcreturn_t &error, const rpcvector_t &) {
-    res[k] = (error == rpcstatus::ok);
-    if (res[k])
-	return;
+		const metadata::provider_desc &adv,
+		buffer_wrapper key, buffer_wrapper value,
+		unsigned int k, unsigned int retries,
+		const rpcreturn_t &error, const rpcvector_t &) {
+	res[k] = (error == rpcstatus::ok);
+	if (res[k])
+		return;
 
-    INFO("a replica of page " << k << " could not be written successfully, error is: " 
-	 << error);
-    if (retries == retry_count)
-	return;
+	INFO("a replica of page " << k << " could not be written successfully, error is: "
+			<< error);
+	if (retries == retry_count)
+		return;
 
-    rpcvector_t write_params;
-    write_params.push_back(key);
-    write_params.push_back(value);
-    direct_rpc->dispatch(adv.host, adv.service, PROVIDER_WRITE, write_params,
-			 boost::bind(&object_handler::rpc_write_callback, this,
-				     boost::ref(res), boost::cref(adv),
-				     key, value, k, retries + 1, _1, _2));
+	rpcvector_t write_params;
+	write_params.push_back(key);
+	write_params.push_back(value);
+	direct_rpc->dispatch(adv.host, adv.service, PROVIDER_WRITE, write_params,
+			boost::bind(&object_handler::rpc_write_callback, this,
+					boost::ref(res), boost::cref(adv),
+					key, value, k, retries + 1, _1, _2));
 }
 
 static void rpc_result_callback(bool &res, const rpcreturn_t &error, const rpcvector_t &) {
-    if (error != rpcstatus::ok) {
-	res = false;
-	ERROR("could not perform RPC successfully, RPC status is: " << error);
-    }
+	if (error != rpcstatus::ok) {
+		res = false;
+		ERROR("could not perform RPC successfully, RPC status is: " << error);
+	}
 }
 
 template <class T> static void rpc_get_serialized(bool &res, T &output, const rpcreturn_t &error, const rpcvector_t &result) {
-    if (error == rpcstatus::ok && result.size() == 1 && result[0].getValue(&output, true))
-	return;
-    res = false;
-    ERROR("could not perform RPC successfully; RPC status is: " << error);
+	if (error == rpcstatus::ok && result.size() == 1 && result[0].getValue(&output, true))
+		return;
+	res = false;
+	ERROR("could not perform RPC successfully; RPC status is: " << error);
 }
 
 bool object_handler::get_root(boost::uint32_t version, metadata::root_t &root) {
-    bool result = true;
+	bool result = true;
 
-    if (version == 0 || !version_cache.read(version, &root)) {
-	rpcvector_t params;
-	params.push_back(buffer_wrapper(id, true));
-	params.push_back(buffer_wrapper(version, true));
-	direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_GETROOT, params,
-			     bind(&rpc_get_serialized<metadata::root_t>, boost::ref(result), 
-				  boost::ref(root), _1, _2));
-	direct_rpc->run();
-	if (result && version != 0)
-	    version_cache.write(root.node.version, root);
-    }
+	if (version == 0 || !version_cache.read(version, &root)) {
+		rpcvector_t params;
+		params.push_back(buffer_wrapper(id, true));
+		params.push_back(buffer_wrapper(version, true));
+		direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_GETROOT, params,
+				bind(&rpc_get_serialized<metadata::root_t>, boost::ref(result),
+						boost::ref(root), _1, _2));
+		direct_rpc->run();
+		if (result && version != 0)
+			version_cache.write(root.node.version, root);
+	}
 
-    return result;
+	return result;
 }
 
 bool object_handler::get_locations(page_locations_t &loc, boost::uint64_t offset, boost::uint64_t size, 
-				   boost::uint32_t version) {
-    metadata::root_t query_root(0, 0, 0, 0, 0);
+		boost::uint32_t version) {
+	metadata::root_t query_root(0, 0, 0, 0, 0);
 
-    if (version == 0)
-	query_root = latest_root;
-    else
-	if (!get_root(version, query_root))
-	    return false;
+	if (version == 0)
+		query_root = latest_root;
+	else
+		if (!get_root(version, query_root))
+			return false;
 
-    DBG("query root = " << query_root.node <<  ", version = " << version);
+	DBG("query root = " << query_root.node <<  ", version = " << version);
 
-    if (query_root.node.version < version)
-	throw std::runtime_error("object_handler::get_locations(): requested version higher than latest available version");
-    if (query_root.page_size == 0)
-	throw std::runtime_error("object_handler::get_locations(): read attempt on unallocated/uninitialized object");
-    if (offset + size > query_root.node.size)
-	throw std::runtime_error("object_handler::get_locations(): read attempt beyond maximal size");
-    
-    TIMER_START(read_locations);
-    boost::uint64_t psize = query_root.page_size;
-    boost::uint64_t new_offset = (offset / psize) * psize;
-    boost::uint64_t nbr_vadv = (size + offset - new_offset) / psize + (((offset + size) % psize == 0) ? 0 : 1);
-    boost::uint64_t new_size = nbr_vadv * psize;
-    std::vector<random_select> vadv(nbr_vadv);
+	if (query_root.node.version < version)
+		throw std::runtime_error("object_handler::get_locations(): requested version higher than latest available version");
+	if (query_root.page_size == 0)
+		throw std::runtime_error("object_handler::get_locations(): read attempt on unallocated/uninitialized object");
+	if (offset + size > query_root.node.size)
+		throw std::runtime_error("object_handler::get_locations(): read attempt beyond maximal size");
 
-    metadata::query_t range(query_root.node.id, query_root.node.version, new_offset, new_size);
+	TIMER_START(read_locations);
+	boost::uint64_t psize = query_root.page_size;
+	boost::uint64_t new_offset = (offset / psize) * psize;
+	boost::uint64_t nbr_vadv = (size + offset - new_offset) / psize + (((offset + size) % psize == 0) ? 0 : 1);
+	boost::uint64_t new_size = nbr_vadv * psize;
+	std::vector<random_select> vadv(nbr_vadv);
 
-    TIMER_START(meta_timer);
-    bool result = query->readRecordLocations(vadv, range, query_root);
-    TIMER_STOP(meta_timer, "GET_LOCATIONS " << range << ": Metadata read operation, success: " << result);
-    if (!result)
-	return false;
+	metadata::query_t range(query_root.node.id, query_root.node.version, new_offset, new_size);
 
-    metadata::provider_desc adv;
-    for (boost::uint64_t i = 0; i < vadv.size(); i++)
-	while (1) {
-	    metadata::provider_desc adv = vadv[i].try_next();
-	    if (adv.empty()) 
-		break;
-	    loc.push_back(page_location_t(adv, i * query_root.page_size, query_root.page_size));
-	}
-    TIMER_STOP(read_locations, "GET_LOCATIONS " << range 
-	       << ": Page location vector has been successfully constructed");
+	TIMER_START(meta_timer);
+	bool result = query->readRecordLocations(vadv, range, query_root);
+	TIMER_STOP(meta_timer, "GET_LOCATIONS " << range << ": Metadata read operation, success: " << result);
+	if (!result)
+		return false;
 
-    return true;
+	metadata::provider_desc adv;
+	for (boost::uint64_t i = 0; i < vadv.size(); i++)
+		while (1) {
+			metadata::provider_desc adv = vadv[i].try_next();
+			if (adv.empty())
+				break;
+			loc.push_back(page_location_t(adv, i * query_root.page_size, query_root.page_size));
+		}
+	TIMER_STOP(read_locations, "GET_LOCATIONS " << range
+			<< ": Page location vector has been successfully constructed");
+
+	return true;
 }
 
 bool object_handler::read(boost::uint64_t offset, boost::uint64_t size, char *buffer, boost::uint32_t version) {
-    metadata::root_t query_root(0, 0, 0, 0, 0);
+	metadata::root_t query_root(0, 0, 0, 0, 0);
 
-    if (version == 0)
-	query_root = latest_root;
-    else
-	if (!get_root(version, query_root))
-	    return false;
+	if (version == 0)
+		query_root = latest_root;
+	else
+		if (!get_root(version, query_root))
+			return false;
 
-    DBG("query root = " << query_root.node <<  ", version = " << version);
+	DBG("query root = " << query_root.node <<  ", version = " << version);
 
-    if (query_root.node.version < version)
-	throw std::runtime_error("object_handler::read(): read attempt on a version higher than latest available version");
-    if (query_root.page_size == 0)
-	throw std::runtime_error("object_handler::read(): read attempt on unallocated/uninitialized object");
-    if (offset + size > query_root.node.size)
-	throw std::runtime_error("object_handler::read(): read attempt beyond maximal size");
+	if (query_root.node.version < version)
+		throw std::runtime_error("object_handler::read(): read attempt on a version higher than latest available version");
+	if (query_root.page_size == 0)
+		throw std::runtime_error("object_handler::read(): read attempt on unallocated/uninitialized object");
+	if (offset + size > query_root.node.size)
+		throw std::runtime_error("object_handler::read(): read attempt beyond maximal size");
 
-    TIMER_START(read_timer);
-    boost::uint64_t psize = query_root.page_size;
-    boost::uint64_t new_offset = (offset / psize) * psize;
-    boost::uint64_t nbr_vadv = (size + offset - new_offset) / psize + (((offset + size) % psize == 0) ? 0 : 1);
-    boost::uint64_t new_size = nbr_vadv * psize;
-    std::vector<random_select> vadv(nbr_vadv);
+	TIMER_START(read_timer);
+	boost::uint64_t psize = query_root.page_size;
+	boost::uint64_t new_offset = (offset / psize) * psize;
+	boost::uint64_t nbr_vadv = (size + offset - new_offset) / psize + (((offset + size) % psize == 0) ? 0 : 1);
+	boost::uint64_t new_size = nbr_vadv * psize;
+	std::vector<random_select> vadv(nbr_vadv);
 
-    metadata::query_t range(query_root.node.id, query_root.node.version, new_offset, new_size);
+	metadata::query_t range(query_root.node.id, query_root.node.version, new_offset, new_size);
 
-    TIMER_START(meta_timer);
-    bool result = query->readRecordLocations(vadv, range, query_root);
-    TIMER_STOP(meta_timer, "READ " << range << ": Metadata read operation, success: " << result);
-    if (!result)
-	return false;
+	TIMER_START(meta_timer);
+	bool result = query->readRecordLocations(vadv, range, query_root);
+	TIMER_STOP(meta_timer, "READ " << range << ": Metadata read operation, success: " << result);
+	if (!result)
+		return false;
 
-    rpcvector_t read_params;
-    TIMER_START(data_timer);
-    
-    // size of partial read from leftmost/rightmost page when read operation is unaligned
-    uint64_t left_part = (query_root.page_size - (offset % query_root.page_size)) % query_root.page_size;
-    uint64_t right_part = (offset + size) % query_root.page_size;
+	rpcvector_t read_params;
+	TIMER_START(data_timer);
 
-    buffer_wrapper left_buffer, right_buffer;
+	// size of partial read from leftmost/rightmost page when read operation is unaligned
+	uint64_t left_part = (query_root.page_size - (offset % query_root.page_size)) % query_root.page_size;
+	uint64_t right_part = (offset + size) % query_root.page_size;
 
-    // if the left end of range is unaligned, read only the needed part of the page involved
-    unsigned int l = 0;
-    if (offset % psize != 0) {
-	l++;
-	DBG("UNALIGNED LEFT READ QUERY " << vadv[0].get_page_key());
-	read_params.clear();
-	read_params.push_back(buffer_wrapper(vadv[0].get_page_key(), true));
-	read_params.push_back(buffer_wrapper(psize - left_part, true));
-	if (left_part < size) {
-	    read_params.push_back(buffer_wrapper(left_part, true));
-	    left_buffer = buffer_wrapper(buffer, left_part, true);
-	} else {
-	    read_params.push_back(buffer_wrapper(size, true));
-	    left_buffer = buffer_wrapper(buffer, size, true);
+	buffer_wrapper left_buffer, right_buffer;
+
+	// if the left end of range is unaligned, read only the needed part of the page involved
+	unsigned int l = 0;
+	if (offset % psize != 0) {
+		l++;
+		DBG("UNALIGNED LEFT READ QUERY " << vadv[0].get_page_key());
+		read_params.clear();
+		read_params.push_back(buffer_wrapper(vadv[0].get_page_key(), true));
+		read_params.push_back(buffer_wrapper(psize - left_part, true));
+		if (left_part < size) {
+			read_params.push_back(buffer_wrapper(left_part, true));
+			left_buffer = buffer_wrapper(buffer, left_part, true);
+		} else {
+			read_params.push_back(buffer_wrapper(size, true));
+			left_buffer = buffer_wrapper(buffer, size, true);
+		}
+		metadata::provider_desc adv = vadv[0].try_next();
+		if (adv.empty())
+			return false;
+
+		direct_rpc->dispatch(adv.host, adv.service, PROVIDER_READ_PARTIAL, read_params,
+				boost::bind(&object_handler::rpc_provider_callback, this,
+						PROVIDER_READ_PARTIAL, read_params.back(),
+						boost::ref(vadv[0]), left_buffer, boost::ref(result), _1, _2),
+						rpcvector_t(1, left_buffer));
 	}
-	metadata::provider_desc adv = vadv[0].try_next();
-	if (adv.empty())
-	    return false;
 
-	direct_rpc->dispatch(adv.host, adv.service, PROVIDER_READ_PARTIAL, read_params,
-			     boost::bind(&object_handler::rpc_provider_callback, this, 
-					 PROVIDER_READ_PARTIAL, read_params.back(), 
-					 boost::ref(vadv[0]), left_buffer, boost::ref(result), _1, _2), 
-			     rpcvector_t(1, left_buffer));
-    }
+	// read the whole rightmost page to a temporary buffer if the right end of range is unaligned
+	unsigned int r = vadv.size();
+	if (((offset + size) % psize != 0 && r > 1) || (offset % psize == 0 && size < psize)) {
+		r--;
+		DBG("UNALIGNED RIGHT READ QUERY " << vadv[r].get_page_key());
+		read_params.clear();
+		read_params.push_back(buffer_wrapper(vadv[r].get_page_key(), true));
+		read_params.push_back(buffer_wrapper((boost::uint64_t)0, true));
+		read_params.push_back(buffer_wrapper(right_part, true));
+		right_buffer = buffer_wrapper(buffer + left_part + (r - l) * psize, right_part, true);
+		metadata::provider_desc adv = vadv[r].try_next();
+		if (adv.empty())
+			return false;
+		direct_rpc->dispatch(adv.host, adv.service, PROVIDER_READ_PARTIAL, read_params,
+				boost::bind(&object_handler::rpc_provider_callback, this,
+						PROVIDER_READ_PARTIAL, read_params.back(),
+						boost::ref(vadv[r]), right_buffer, boost::ref(result), _1, _2),
+						rpcvector_t(1, right_buffer));
+	}
 
-    // read the whole rightmost page to a temporary buffer if the right end of range is unaligned
-    unsigned int r = vadv.size();
-    if (((offset + size) % psize != 0 && r > 1) || (offset % psize == 0 && size < psize)) {
-	r--;
-	DBG("UNALIGNED RIGHT READ QUERY " << vadv[r].get_page_key());
-	read_params.clear();
-	read_params.push_back(buffer_wrapper(vadv[r].get_page_key(), true));
-	read_params.push_back(buffer_wrapper((boost::uint64_t)0, true));
-	read_params.push_back(buffer_wrapper(right_part, true));
-	right_buffer = buffer_wrapper(buffer + left_part + (r - l) * psize, right_part, true);
-	metadata::provider_desc adv = vadv[r].try_next();
-	if (adv.empty())
-	    return false;
-	direct_rpc->dispatch(adv.host, adv.service, PROVIDER_READ_PARTIAL, read_params,
-			     boost::bind(&object_handler::rpc_provider_callback, this,
-					 PROVIDER_READ_PARTIAL, read_params.back(),
-					 boost::ref(vadv[r]), right_buffer, boost::ref(result), _1, _2),
-			     rpcvector_t(1, right_buffer));
-    }
-    
-    // read all aligned pages directly in the user-supplied buffer
-    for (unsigned int i = l; result && i < r; i++) {
-	DBG("FULL READ QUERY " << vadv[i].get_page_key());
-	read_params.clear();
-	read_params.push_back(buffer_wrapper(vadv[i].get_page_key(), true));
-	metadata::provider_desc adv = vadv[i].try_next();
-	if (adv.empty())
-	    return false;
+	// read all aligned pages directly in the user-supplied buffer
+	for (unsigned int i = l; result && i < r; i++) {
+		DBG("FULL READ QUERY " << vadv[i].get_page_key());
+		read_params.clear();
+		read_params.push_back(buffer_wrapper(vadv[i].get_page_key(), true));
+		metadata::provider_desc adv = vadv[i].try_next();
+		if (adv.empty())
+			return false;
 
-	buffer_wrapper wr_buffer(buffer + left_part + (i - l) * query_root.page_size, 
-				 query_root.page_size, true);
-	direct_rpc->dispatch(adv.host, adv.service, PROVIDER_READ, read_params,
-			     boost::bind(&object_handler::rpc_provider_callback, this, 
-					 PROVIDER_READ, read_params.back(), 
-					 boost::ref(vadv[i]), wr_buffer, boost::ref(result), _1, _2),
-			     rpcvector_t(1, wr_buffer));
-    }
-    direct_rpc->run();
-    TIMER_STOP(data_timer, "READ " << range << ": Data read operation, success: " << result);
+		buffer_wrapper wr_buffer(buffer + left_part + (i - l) * query_root.page_size,
+				query_root.page_size, true);
+		direct_rpc->dispatch(adv.host, adv.service, PROVIDER_READ, read_params,
+				boost::bind(&object_handler::rpc_provider_callback, this,
+						PROVIDER_READ, read_params.back(),
+						boost::ref(vadv[i]), wr_buffer, boost::ref(result), _1, _2),
+						rpcvector_t(1, wr_buffer));
+	}
+	direct_rpc->run();
+	TIMER_STOP(data_timer, "READ " << range << ": Data read operation, success: " << result);
 
-    TIMER_STOP(read_timer, "READ " << range << ": has completed");
-    return result;
+	TIMER_STOP(read_timer, "READ " << range << ": has completed");
+	return result;
 }
 
 bool object_handler::append(boost::uint64_t size, char *buffer) {
-    return exec_write(0, size, buffer, true);
+	return exec_write(0, size, buffer, true);
 }
 
 bool object_handler::write(boost::uint64_t offset, boost::uint64_t size, char *buffer) {
-    return exec_write(offset, size, buffer, false);
+	return exec_write(offset, size, buffer, false);
 }
 
 bool object_handler::exec_write(boost::uint64_t offset, boost::uint64_t size, char *buffer, bool append) {
-    if (latest_root.page_size == 0)
-	throw std::runtime_error("object_handler::write(): write attempt on unallocated/uninitialized object");
-    ASSERT(offset % latest_root.page_size == 0 && size % latest_root.page_size == 0);
+	if (latest_root.page_size == 0)
+		throw std::runtime_error("object_handler::write(): write attempt on unallocated/uninitialized object");
+	ASSERT(offset % latest_root.page_size == 0 && size % latest_root.page_size == 0);
 
-    TIMER_START(write_timer);
-    bool result = true;
+	TIMER_START(write_timer);
+	bool result = true;
 
-    metadata::query_t range(id, rnd(), offset, size);
-    boost::uint64_t page_size = latest_root.page_size;
-    unsigned int replica_count = latest_root.replica_count;
+	metadata::query_t range(id, rnd(), offset, size);
+	boost::uint64_t page_size = latest_root.page_size;
+	unsigned int replica_count = latest_root.replica_count;
 
-    metadata::replica_list_t adv;
-    interval_range_query::node_deque_t node_deque;
-    rpcvector_t params;
+	metadata::replica_list_t adv;
+	interval_range_query::node_deque_t node_deque;
+	rpcvector_t params;
 
-    // try to get a list of providers
-    TIMER_START(publisher_timer);
-    params.clear();
-    params.push_back(buffer_wrapper((size / page_size) * replica_count, true));
-    params.push_back(buffer_wrapper(replica_count, true));
-    direct_rpc->dispatch(publisher_host, publisher_service, PUBLISHER_GET, params,
-			 boost::bind(&rpc_get_serialized<metadata::replica_list_t>, boost::ref(result), 
-				     boost::ref(adv), _1, _2));
-    direct_rpc->run();
-    TIMER_STOP(publisher_timer, "WRITE " << range << ": PUBLISHER_GET, result: " << result);
-    if (!result || adv.size() < (size / page_size) * replica_count)
-	return false;
+	// try to get a list of providers
+	TIMER_START(publisher_timer);
+	params.clear();
+	params.push_back(buffer_wrapper((size / page_size) * replica_count, true));
+	params.push_back(buffer_wrapper(replica_count, true));
+	direct_rpc->dispatch(publisher_host, publisher_service, PUBLISHER_GET, params,
+			boost::bind(&rpc_get_serialized<metadata::replica_list_t>, boost::ref(result),
+					boost::ref(adv), _1, _2));
+	direct_rpc->run();
+	TIMER_STOP(publisher_timer, "WRITE " << range << ": PUBLISHER_GET, result: " << result);
+	if (!result || adv.size() < (size / page_size) * replica_count)
+		return false;
 
-    // write the set of pages to the page providers
-    boost::dynamic_bitset<> page_results(adv.size());
-    TIMER_START(providers_timer);
-    for (boost::uint64_t i = 0, j = 0; i * page_size < size; i++, j += replica_count) {
-	// prepare the page
-	rpcvector_t write_params;
-	metadata::query_t page_key(id, range.version, i, page_size);
-	node_deque.push_back(page_key);
-	write_params.push_back(buffer_wrapper(page_key, true));
-	buffer_wrapper page_contents;
-	write_params.push_back(buffer_wrapper(buffer + i * page_size, page_size, true));
+	// write the set of pages to the page providers
+	boost::dynamic_bitset<> page_results(adv.size());
+	TIMER_START(providers_timer);
+	for (boost::uint64_t i = 0, j = 0; i * page_size < size; i++, j += replica_count) {
+		// prepare the page
+		rpcvector_t write_params;
+		metadata::query_t page_key(id, range.version, i, page_size);
+		node_deque.push_back(page_key);
+		write_params.push_back(buffer_wrapper(page_key, true));
+		buffer_wrapper page_contents;
+		write_params.push_back(buffer_wrapper(buffer + i * page_size, page_size, true));
 
-	// write the replicas
-	for (unsigned int k = j; k < j + replica_count; k++)
-	    direct_rpc->dispatch(adv[k].host, adv[k].service, PROVIDER_WRITE,
-				 write_params,
-				 boost::bind(&object_handler::rpc_write_callback, this,
-					     boost::ref(page_results), boost::cref(adv[k]),
-					     write_params[0], write_params[1], k, 0,
-					     _1, _2));
-    }
-    direct_rpc->run();
-    
-    // make sure each page has at least one successfully written replica
-    for (unsigned int i = 0; i < adv.size() && result; i += replica_count) {
-	unsigned int k;
-	for (k = i; k < i + replica_count; k++)
-	    if (page_results[k])
-		break;
-	if (k == i + replica_count) {
-	    ERROR("WRITE " << range << ": none of the replicas of page " << i / replica_count 
-		  << " could be written successfully, aborted");
-	    result = false;
-	    break;
+		// write the replicas
+		for (unsigned int k = j; k < j + replica_count; k++)
+			direct_rpc->dispatch(adv[k].host, adv[k].service, PROVIDER_WRITE,
+					write_params,
+					boost::bind(&object_handler::rpc_write_callback, this,
+							boost::ref(page_results), boost::cref(adv[k]),
+							write_params[0], write_params[1], k, 0,
+							_1, _2));
 	}
-    }
-	
-    TIMER_STOP(providers_timer, "WRITE " << range << ": Data written to providers, result: " << result);
-    if (!result)
-	return false;
-    
-    // get a ticket from the version manager
-    params.clear();
-    params.push_back(buffer_wrapper(range, true));
-    params.push_back(buffer_wrapper(append, true));
+	direct_rpc->run();
 
-    vmgr_reply mgr_reply;
-    TIMER_START(ticket_timer);
-    direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_GETTICKET, params,
-			 bind(&rpc_get_serialized<vmgr_reply>, boost::ref(result),
-			      boost::ref(mgr_reply), _1, _2));
-    direct_rpc->run();
-    TIMER_STOP(ticket_timer, "WRITE " << range << ": VMGR_GETTICKET, result: " << result);
-    if (!result)
-	return false;
+	// make sure each page has at least one successfully written replica
+	for (unsigned int i = 0; i < adv.size() && result; i += replica_count) {
+		unsigned int k;
+		for (k = i; k < i + replica_count; k++)
+			if (page_results[k])
+				break;
+		if (k == i + replica_count) {
+			ERROR("WRITE " << range << ": none of the replicas of page " << i / replica_count
+					<< " could be written successfully, aborted");
+			result = false;
+			break;
+		}
+	}
 
-    // construct the set of leaves to be written to the metadata
-    range.offset = offset = mgr_reply.append_offset;
-    range.version = mgr_reply.ticket;
-    TIMER_START(metadata_timer);
-    result = query->writeRecordLocations(mgr_reply, node_deque, adv);
-    TIMER_STOP(metadata_timer, "WRITE " << range << ": writeRecordLocations(), result: " << result);
-    if (!result)
-	return false;
+	TIMER_STOP(providers_timer, "WRITE " << range << ": Data written to providers, result: " << result);
+	if (!result)
+		return false;
 
-    // publish the latest written version
-    TIMER_START(publish_timer);
-    params.clear();
-    params.push_back(buffer_wrapper(range, true));
-    direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_PUBLISH, params,
-			 boost::bind(rpc_result_callback, boost::ref(result), _1, _2));
-    direct_rpc->run();
-    TIMER_STOP(publish_timer, "WRITE " << range << ": VMGR_PUBLISH, result: " << result);
-    TIMER_STOP(write_timer, "WRITE " << range << ": has completed, result: " << result);
-    if (result) {
-	latest_root.node.version = mgr_reply.ticket;
-	return true;
-    } else
-	return false;
+	// get a ticket from the version manager
+	params.clear();
+	params.push_back(buffer_wrapper(range, true));
+	params.push_back(buffer_wrapper(append, true));
+
+	vmgr_reply mgr_reply;
+	TIMER_START(ticket_timer);
+	direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_GETTICKET, params,
+			bind(&rpc_get_serialized<vmgr_reply>, boost::ref(result),
+					boost::ref(mgr_reply), _1, _2));
+	direct_rpc->run();
+	TIMER_STOP(ticket_timer, "WRITE " << range << ": VMGR_GETTICKET, result: " << result);
+	if (!result)
+		return false;
+
+	// construct the set of leaves to be written to the metadata
+	range.offset = offset = mgr_reply.append_offset;
+	range.version = mgr_reply.ticket;
+	TIMER_START(metadata_timer);
+	result = query->writeRecordLocations(mgr_reply, node_deque, adv);
+	TIMER_STOP(metadata_timer, "WRITE " << range << ": writeRecordLocations(), result: " << result);
+	if (!result)
+		return false;
+
+	// publish the latest written version
+	TIMER_START(publish_timer);
+	params.clear();
+	params.push_back(buffer_wrapper(range, true));
+	direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_PUBLISH, params,
+			boost::bind(rpc_result_callback, boost::ref(result), _1, _2));
+	direct_rpc->run();
+	TIMER_STOP(publish_timer, "WRITE " << range << ": VMGR_PUBLISH, result: " << result);
+	TIMER_STOP(write_timer, "WRITE " << range << ": has completed, result: " << result);
+	if (result) {
+		latest_root.node.version = mgr_reply.ticket;
+		return true;
+	} else
+		return false;
 }
 
 bool object_handler::create(boost::uint64_t page_size, boost::uint32_t replica_count) {
-    bool result = true;
+	bool result = true;
 
-    rpcvector_t params;
-    params.push_back(buffer_wrapper(page_size, true));
-    params.push_back(buffer_wrapper(replica_count, true));
-    direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_CREATE, params,
-			 boost::bind(rpc_get_serialized<metadata::root_t>, boost::ref(result), 
-				     boost::ref(latest_root), _1, _2));
-    direct_rpc->run();
-    id = latest_root.node.id;
-    DBG("create result = " << result << ", id = " << id);
-    return result;
+	rpcvector_t params;
+	params.push_back(buffer_wrapper(page_size, true));
+	params.push_back(buffer_wrapper(replica_count, true));
+	direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_CREATE, params,
+			boost::bind(rpc_get_serialized<metadata::root_t>, boost::ref(result),
+					boost::ref(latest_root), _1, _2));
+	direct_rpc->run();
+	id = latest_root.node.id;
+	DBG("create result = " << result << ", id = " << id);
+	return result;
 }
 
-bool object_handler::get_latest(boost::uint32_t id_) {
-    if (id_ != 0)
-	id = id_;
+bool object_handler::fcreate(boost::uint32_t blob_id, boost::uint64_t page_size, boost::uint32_t replica_count) {
+	bool result = true;
 
-    bool result = get_root(0, latest_root);
-    DBG("latest version request: " << latest_root.node);
-    return result;
+	rpcvector_t params;
+
+	params.push_back(buffer_wrapper(blob_id, true));
+	params.push_back(buffer_wrapper(page_size, true));
+	params.push_back(buffer_wrapper(replica_count, true));
+	direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_FCREATE, params,
+			boost::bind(rpc_get_serialized<metadata::root_t>, boost::ref(result),
+					boost::ref(latest_root), _1, _2));
+	direct_rpc->run();
+	id = latest_root.node.id;
+	DBG("create result = " << result << ", id = " << id);
+	return result;
+}
+
+bool object_handler::read_list(char *buffer, boost::uint64_t mem_size, int blob_list_count, boost::uint64_t offsets[], boost::uint64_t sizes[], boost::uint32_t version) {
+	metadata::root_t query_root(0, 0, 0, 0, 0);
+
+	if (version == 0)
+		query_root = latest_root;
+	else
+		if (!get_root(version, query_root))
+			return false;
+
+	DBG("query root = " << query_root.node <<  ", version = " << version);
+
+	if (query_root.node.version < version)
+		throw std::runtime_error("object_handler::read(): read attempt on a version higher than latest available version");
+	if (query_root.page_size == 0)
+		throw std::runtime_error("object_handler::read(): read attempt on unallocated/uninitialized object");
+	if (offsets[blob_list_count-1] + sizes[blob_list_count-1] > query_root.node.size)
+		throw std::runtime_error("object_handler::read(): read attempt beyond maximal size");
+
+	TIMER_START(read_timer);
+	boost::uint64_t psize = query_root.page_size;
+
+	boost::uint64_t new_offset;
+	boost::uint64_t nbr_vadv;
+	boost::uint64_t new_size;
+	std::vector< std::vector<random_select> > list_vadv;
+	list_vadv.resize(blob_list_count);
+	metadata::list_query_t list_range;
+	for (int i = 0; i < blob_list_count; i++) {
+		new_offset = (offsets[i] / psize) * psize;
+		nbr_vadv = (sizes[i] + offsets[i] - new_offset) / psize + (((offsets[i] + sizes[i]) % psize == 0) ? 0 : 1);
+		new_size = nbr_vadv * psize;
+		list_vadv[i].resize(nbr_vadv);
+		metadata::query_t range(query_root.node.id, query_root.node.version, new_offset, new_size);
+		list_range.queries.push_back(range);
+	}
+
+	TIMER_START(meta_timer);
+	bool result = query->readListRecordLocations(list_vadv, list_range, query_root);
+	TIMER_STOP(meta_timer, "READ LIST " << list_range << ": Metadata read operation, success: " << result);
+	if (!result)
+		return false;
+
+	rpcvector_t read_params;
+	TIMER_START(data_timer);
+	// Starting from the fist part in memory and the first part in blob
+	unsigned int current_position = 0 ;
+	for (int ichunk = 0; ichunk < blob_list_count; ichunk++ ) {
+
+		// size of partial read from leftmost/rightmost page when read operation is unaligned
+		uint64_t left_part = (query_root.page_size - (offsets[ichunk] % query_root.page_size)) % query_root.page_size;
+		uint64_t right_part = (offsets[ichunk] + sizes[ichunk]) % query_root.page_size;
+
+		buffer_wrapper left_buffer, right_buffer;
+
+		// if the left end of range is unaligned, read only the needed part of the page involved
+		unsigned int l = 0;
+		if (offsets[ichunk] % psize != 0) {
+			l++;
+			DBG("UNALIGNED LEFT READ QUERY " << list_vadv[ichunk][0].get_page_key());
+			read_params.clear();
+			read_params.push_back(buffer_wrapper(list_vadv[ichunk][0].get_page_key(), true));
+			read_params.push_back(buffer_wrapper(psize - left_part, true));
+			if (left_part < sizes[ichunk]) {
+				read_params.push_back(buffer_wrapper(left_part, true));
+				left_buffer = buffer_wrapper(buffer + current_position, left_part, true);
+			} else {
+				read_params.push_back(buffer_wrapper(sizes[ichunk], true));
+				left_buffer = buffer_wrapper(buffer + current_position, sizes[ichunk], true);
+			}
+			metadata::provider_desc adv = list_vadv[ichunk][0].try_next();
+			if (adv.empty())
+				return false;
+
+			direct_rpc->dispatch(adv.host, adv.service, PROVIDER_READ_PARTIAL, read_params,
+					boost::bind(&object_handler::rpc_provider_callback, this,
+							PROVIDER_READ_PARTIAL, read_params.back(),
+							boost::ref(list_vadv[ichunk][0]), left_buffer, boost::ref(result), _1, _2),
+							rpcvector_t(1, left_buffer));
+		}
+
+		// read the whole rightmost page to a temporary buffer if the right end of range is unaligned
+		unsigned int r = list_vadv[ichunk].size();
+		if (((offsets[ichunk] + sizes[ichunk]) % psize != 0 && r > 1) || (offsets[ichunk] % psize == 0 && sizes[ichunk] < psize)) {
+			r--;
+			DBG("UNALIGNED RIGHT READ QUERY " << list_vadv[ichunk][r].get_page_key());
+			read_params.clear();
+			read_params.push_back(buffer_wrapper(list_vadv[ichunk][r].get_page_key(), true));
+			read_params.push_back(buffer_wrapper((boost::uint64_t)0, true));
+			read_params.push_back(buffer_wrapper(right_part, true));
+			right_buffer = buffer_wrapper(buffer + current_position + left_part + (r - l) * psize, right_part, true);
+			metadata::provider_desc adv = list_vadv[ichunk][r].try_next();
+			if (adv.empty())
+				return false;
+			direct_rpc->dispatch(adv.host, adv.service, PROVIDER_READ_PARTIAL, read_params,
+					boost::bind(&object_handler::rpc_provider_callback, this,
+							PROVIDER_READ_PARTIAL, read_params.back(),
+							boost::ref(list_vadv[ichunk][r]), right_buffer, boost::ref(result), _1, _2),
+							rpcvector_t(1, right_buffer));
+		}
+
+		// read all aligned pages directly in the user-supplied buffer
+		for (unsigned int i = l; result && i < r; i++) {
+			DBG("FULL READ QUERY " << list_vadv[ichunk][i].get_page_key());
+			read_params.clear();
+			read_params.push_back(buffer_wrapper(list_vadv[ichunk][i].get_page_key(), true));
+			metadata::provider_desc adv = list_vadv[ichunk][i].try_next();
+			if (adv.empty())
+				return false;
+
+			buffer_wrapper wr_buffer(buffer + current_position + left_part + (i - l) * query_root.page_size,
+					query_root.page_size, true);
+			direct_rpc->dispatch(adv.host, adv.service, PROVIDER_READ, read_params,
+					boost::bind(&object_handler::rpc_provider_callback, this,
+							PROVIDER_READ, read_params.back(),
+							boost::ref(list_vadv[ichunk][i]), wr_buffer, boost::ref(result), _1, _2),
+							rpcvector_t(1, wr_buffer));
+		}
+
+		current_position += sizes[ichunk];
+	}
+	direct_rpc->run();
+	TIMER_STOP(data_timer, "READ LIST " << list_range << ": Data read operation, success: " << result);
+
+	TIMER_STOP(read_timer, "READ LIST" << list_range << ": has completed");
+	return result;
+
+
+}
+
+
+bool object_handler::get_latest(boost::uint32_t id_) {
+	if (id_ != 0)
+		id = id_;
+
+	bool result = get_root(0, latest_root);
+	DBG("latest version request: " << latest_root.node);
+	return result;
 }
 
 boost::int32_t object_handler::get_objcount() const {
-    bool result = true;
-    boost::int32_t obj_no;
+	bool result = true;
+	boost::int32_t obj_no;
 
-    rpcvector_t params;    
-    direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_GETOBJNO, rpcvector_t(), 
-			 boost::bind(rpc_get_serialized<boost::int32_t>, boost::ref(result), 
-				     boost::ref(obj_no), _1, _2));
-    direct_rpc->run();
-    DBG("the total number of blobs is: " << obj_no);
-    if (result)
-	return obj_no;
-    else
-	return -1;
+	rpcvector_t params;
+	direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_GETOBJNO, rpcvector_t(),
+			boost::bind(rpc_get_serialized<boost::int32_t>, boost::ref(result),
+					boost::ref(obj_no), _1, _2));
+	direct_rpc->run();
+	DBG("the total number of blobs is: " << obj_no);
+	if (result)
+		return obj_no;
+	else
+		return -1;
 }
 
 bool object_handler::clone(boost::int32_t id_, boost::int32_t version_) {
-    metadata::root_t clone_root(0, 0, 0, 0, 0);
-    bool result = true;
-    if (id_ == 0)
-	id_ = id;
+	metadata::root_t clone_root(0, 0, 0, 0, 0);
+	bool result = true;
+	if (id_ == 0)
+		id_ = id;
 
-    rpcvector_t params;
-    params.push_back(buffer_wrapper(id_, true));
-    params.push_back(buffer_wrapper(version_, true));
-    direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_CLONE, params, 
-			 boost::bind(rpc_get_serialized<metadata::root_t>, boost::ref(result), 
-				     boost::ref(clone_root), _1, _2));
-    direct_rpc->run();
-    DBG("new clone: " << clone_root.node);
-    if (result && !clone_root.empty()) {
-	latest_root = clone_root;
-	latest_root.node.id = id;
-	id = clone_root.node.id;
-	
-	return true;
-    } else
-	return false;
+	rpcvector_t params;
+	params.push_back(buffer_wrapper(id_, true));
+	params.push_back(buffer_wrapper(version_, true));
+	direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_CLONE, params,
+			boost::bind(rpc_get_serialized<metadata::root_t>, boost::ref(result),
+					boost::ref(clone_root), _1, _2));
+	direct_rpc->run();
+	DBG("new clone: " << clone_root.node);
+	if (result && !clone_root.empty()) {
+		latest_root = clone_root;
+		latest_root.node.id = id;
+		id = clone_root.node.id;
+
+		return true;
+	} else
+		return false;
+}
+
+bool object_handler::write_list(char *buffer, boost::uint64_t mem_size, int blob_list_count, boost::uint64_t offsets[], boost::uint64_t sizes[], boost::uint32_t version) {
+	if (latest_root.page_size == 0)
+		throw std::runtime_error("object_handler::write(): write attempt on unallocated/uninitialized object");
+	// Check if write operations is not aligned to chunk size
+	ASSERT(offsets[blob_list_count - 1] % latest_root.page_size == 0 && sizes[blob_list_count -1] % latest_root.page_size == 0);
+
+	TIMER_START(write_timer);
+	bool result = true;
+
+	metadata::list_query_t list_range;
+	// mem_size should be equal to sum of non-contiguous parts
+	unsigned int random_version = rnd();
+
+	for (int i = 0; i < blob_list_count ; i++) {
+
+		list_range.queries.push_back(metadata::query_t(id, random_version, offsets[i], sizes[i]));
+	}
+
+	boost::uint64_t page_size = latest_root.page_size;
+	unsigned int replica_count = latest_root.replica_count;
+
+	metadata::replica_list_t adv;
+	interval_range_query::node_deque_t node_deque;
+	rpcvector_t params;
+
+	// try to get a list of providers
+	TIMER_START(publisher_timer);
+	params.clear();
+	params.push_back(buffer_wrapper((mem_size / page_size) * replica_count, true));
+	params.push_back(buffer_wrapper(replica_count, true));
+	direct_rpc->dispatch(publisher_host, publisher_service, PUBLISHER_GET, params,
+			boost::bind(&rpc_get_serialized<metadata::replica_list_t>, boost::ref(result),
+					boost::ref(adv), _1, _2));
+	direct_rpc->run();
+	TIMER_STOP(publisher_timer, "WRITE_LIST " << list_range << ": PUBLISHER_GET, result: " << result);
+	if (!result || adv.size() < (mem_size / page_size) * replica_count)
+		return false;
+
+	// write the set of pages to the page providers
+	boost::dynamic_bitset<> page_results(adv.size());
+	TIMER_START(providers_timer);
+
+		for (boost::uint64_t i = 0, j = 0; i * page_size < mem_size; i++, j += replica_count) {
+			// prepare the page
+			rpcvector_t write_params;
+			metadata::query_t page_key(id, random_version, i, page_size);
+			node_deque.push_back(page_key);
+			write_params.push_back(buffer_wrapper(page_key, true));
+			buffer_wrapper page_contents;
+			write_params.push_back(buffer_wrapper(buffer + i * page_size, page_size, true));
+
+			// write the replicas
+			for (unsigned int k = j; k < j + replica_count; k++)
+				direct_rpc->dispatch(adv[k].host, adv[k].service, PROVIDER_WRITE,
+						write_params,
+						boost::bind(&object_handler::rpc_write_callback, this,
+								boost::ref(page_results), boost::cref(adv[k]),
+								write_params[0], write_params[1], k, 0,
+								_1, _2));
+		}
+
+	direct_rpc->run();
+
+	// make sure each page has at least one successfully written replica
+	for (unsigned int i = 0; i < adv.size() && result; i += replica_count) {
+		unsigned int k;
+		for (k = i; k < i + replica_count; k++)
+			if (page_results[k])
+				break;
+		if (k == i + replica_count) {
+			ERROR("WRITE_LIST " << list_range << ": none of the replicas of page " << i / replica_count
+					<< " could be written successfully, aborted");
+			result = false;
+			break;
+		}
+	}
+
+	TIMER_STOP(providers_timer, "WRITE_LIST " << list_range << ": Data written to providers, result: " << result);
+	if (!result)
+		return false;
+
+	// get a ticket from the version manager
+	params.clear();
+	params.push_back(buffer_wrapper(list_range, true));
+
+	vmgr_reply mgr_reply;
+	TIMER_START(ticket_timer);
+	direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_LIST_GETTICKET, params,
+			bind(&rpc_get_serialized<vmgr_reply>, boost::ref(result),
+					boost::ref(mgr_reply), _1, _2));
+	direct_rpc->run();
+	TIMER_STOP(ticket_timer, "WRITE_LIST " << list_range << ": VMGR_LIST_GETTICKET, result: " << result);
+	if (!result)
+		return false;
+
+	// construct the set of leaves to be written to the metadata
+	list_range.queries[0].version = mgr_reply.ticket;
+	TIMER_START(metadata_timer);
+	result = query->writeRecordLocationsForListQuery(mgr_reply, node_deque, adv, list_range);
+	TIMER_STOP(metadata_timer, "WRITE_LIST " << list_range << ": writeRecordLocationsForListQuery(), result: " << result);
+	if (!result)
+		return false;
+
+	// publish the latest written version
+	TIMER_START(publish_timer);
+	params.clear();
+	params.push_back(buffer_wrapper(list_range, true));
+	direct_rpc->dispatch(vmgr_host, vmgr_service, VMGR_LIST_PUBLISH, params,
+			boost::bind(rpc_result_callback, boost::ref(result), _1, _2));
+	direct_rpc->run();
+	TIMER_STOP(publish_timer, "WRITE_LIST " << list_range << ": VMGR_LIST_PUBLISH, result: " << result);
+	TIMER_STOP(write_timer, "WRITE_LIST " << list_range << ": has completed, result: " << result);
+	if (result) {
+		latest_root.node.version = mgr_reply.ticket;
+		return true;
+	} else
+		return false;
 }
 
