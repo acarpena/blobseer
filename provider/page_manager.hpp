@@ -34,7 +34,8 @@ private:
     update_hooks_t update_hooks;
     bool compression;
 
-    void exec_hooks(const boost::int32_t rpc_name, buffer_wrapper page_id, boost::uint64_t page_size, const std::string &sender);
+    void exec_hooks(const boost::int32_t rpc_name, buffer_wrapper page_id, boost::uint64_t page_size, 
+		    const std::string &sender);
 };
 
 template <class Persistency> page_manager<Persistency>::page_manager(page_cache_t *pc, bool c) 
@@ -43,7 +44,8 @@ template <class Persistency> page_manager<Persistency>::page_manager(page_cache_
 template <class Persistency> page_manager<Persistency>::~page_manager() { }
 
 template <class Persistency> rpcreturn_t page_manager<Persistency>::write_page(const rpcvector_t &params, 
-									       rpcvector_t & /*result*/, const std::string &sender) {
+									       rpcvector_t & /*result*/, 
+									       const std::string &sender) {
     if (params.size() % 2 != 0 || params.size() < 2) {
 	ERROR("RPC error: wrong argument number, required even");
 	return rpcstatus::ok;
@@ -59,7 +61,8 @@ template <class Persistency> rpcreturn_t page_manager<Persistency>::write_page(c
     return rpcstatus::ok;
 }
 
-template <class Persistency> rpcreturn_t page_manager<Persistency>::read_page(const rpcvector_t &params, rpcvector_t &result, 
+template <class Persistency> rpcreturn_t page_manager<Persistency>::read_page(const rpcvector_t &params, 
+									      rpcvector_t &result, 
 									      const std::string &sender) {
     if (params.size() < 1) {
 	ERROR("RPC error: wrong argument number, required at least one");
@@ -84,10 +87,11 @@ template <class Persistency> rpcreturn_t page_manager<Persistency>::read_page(co
 	return rpcstatus::eobj;
 }
 
-template <class Persistency> rpcreturn_t page_manager<Persistency>::read_partial_page(const rpcvector_t &params, rpcvector_t &result, 
+template <class Persistency> rpcreturn_t page_manager<Persistency>::read_partial_page(const rpcvector_t &params, 
+										      rpcvector_t &result, 
 										      const std::string &sender) {
     boost::uint64_t offset, size;
-    buffer_wrapper data;
+    buffer_wrapper data, out;
 
     if (params.size() != 3) {
 	ERROR("RPC error: wrong argument number, required are three: page key, offset, size");
@@ -98,10 +102,15 @@ template <class Persistency> rpcreturn_t page_manager<Persistency>::read_partial
 	ERROR("RPC error: could not deserialize offset and size for partial read, aborted");
 	return rpcstatus::earg;
     }
-    if (!page_cache->read(params[0], &data)) {
+    if (!page_cache->read(params[0], &out)) {
 	INFO("page could not be read: " << params[0]);
 	return rpcstatus::eobj;
     }
+
+    if (compression)
+	data.decompress(out.get(), out.size());
+    else
+	data = out;
 
     if (data.size() < offset + size) {
 	INFO("offset " << offset << " and size " << size << "do not fall within the requested page" 

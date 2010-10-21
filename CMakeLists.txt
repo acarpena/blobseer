@@ -31,7 +31,23 @@ set(BDB_ROOT ${EXTERNAL_ROOT})
 find_package(BerkeleyDB)
 include_directories(${BDB_INCLUDE_DIR})
 
+# set up LZO library
+set(LZO_ROOT ${EXTERNAL_ROOT})
+find_package(LZO)
+include_directories(${LZO_INCLUDE_DIR})
+
+# set up BZIP2 library
+find_package(BZip2)
+include_directories(${BZIP2_INCLUDE_DIR})
 # -----------------------------------------------------------------------------------
+
+# set archiving options
+#add_definitions(-DWITH_MEMCPY)
+#set(ARCH_LIBRARIES "")
+add_definitions(-DWITH_LZO)
+set(ARCH_LIBRARIES ${LZO_LIBRARIES})
+#add_definitions(-DWITH_BZIP2)
+#set(ARCH_LIBRARIES ${BZIP2_LIBRARIES})
 
 # set the global include dirs
 include_directories(${BLOBSEER_SOURCE_DIR})
