@@ -125,7 +125,7 @@ public:
     }
 
     bool decompress(char *in_content, unsigned int in_len) {
-	ASSERT(len >= sizeof(boost::uint64_t));
+	ASSERT(in_len >= sizeof(boost::uint64_t));
 	boost::uint64_t decompressed_len;
 	memcpy(&decompressed_len, in_content, sizeof(boost::uint64_t));
 	ASSERT(decompressed_len < MAX_SIZE);
