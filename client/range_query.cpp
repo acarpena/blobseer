@@ -33,7 +33,7 @@ static bool read_pnode(bool &result, metadata::dhtnode_t &node, buffer_wrapper v
 }
 
 static void siblings_callback(dht_t *dht, bool isLeft, metadata::query_t &target, 
-		vmgr_reply::siblings_enum_t &siblings, metadata::query_t parent, buffer_wrapper val) {
+		metadata::siblings_enum_t &siblings, metadata::query_t parent, buffer_wrapper val) {
 	metadata::dhtnode_t node(false);
 
 	if (!read_node(node, val))
@@ -64,10 +64,38 @@ static void siblings_callback(dht_t *dht, bool isLeft, metadata::query_t &target
 	}
 }
 
+static void compute_sibling_versions(metadata::siblings_enum_t &siblings,
+		metadata::query_t &edge_node,
+		obj_info::interval_list_t &intervals,
+		boost::uint64_t root_size,
+		metadata::query_t except_this_query = metadata::query_t(0, 0, 0, 0)) {
+	metadata::query_t current_node = edge_node;
+	while (current_node.size < root_size) {
+		label_found:
+		metadata::query_t brother = current_node;
+		if (current_node.offset % (2 * current_node.size) == 0)
+			brother.offset = current_node.offset + current_node.size;
+		else {
+			brother.offset = current_node.offset - current_node.size;
+			current_node.offset = brother.offset;
+		}
+		current_node.size *= 2;
+		// current node is now the parent, brother is the direct sibling.
+		for (obj_info::interval_list_t::reverse_iterator j = intervals.rbegin(); j != intervals.rend(); j++)
+			for (metadata::list_query_t::query_enum_t::reverse_iterator rit = j->second.first.queries.rbegin(); rit < j->second.first.queries.rend(); ++rit)
+				if ( *rit!=except_this_query && brother.intersects(*rit)) {
+					brother.version = rit->version;
+					siblings.push_back(brother);
+					goto label_found;
+				}
+	}
+}
+
 bool interval_range_query::writeRecordLocations(vmgr_reply &mgr_reply, node_deque_t &node_deque, metadata::replica_list_t &provider_list) {
 	if (node_deque.empty())
 		return false;
 	bool result = true;
+	metadata::query_t query = mgr_reply.intervals.rbegin()->second.first.queries.back();
 
 	DBG("root size = " << mgr_reply.root_size);
 	// first write the nodes in the queue
@@ -76,9 +104,8 @@ bool interval_range_query::writeRecordLocations(vmgr_reply &mgr_reply, node_dequ
 		metadata::replica_list_t providers;
 
 		node.left = node_deque[i];
-		node_deque[i].version = mgr_reply.ticket;
-		// node_deque[i].offset is set to the page's order number in that write
-		node_deque[i].offset = mgr_reply.append_offset + node_deque[i].offset * node_deque[i].size;
+		node_deque[i].version = query.version;
+		node_deque[i].offset = query.offset + node_deque[i].offset * node_deque[i].size;
 		for (unsigned int k = j; result && k < j + mgr_reply.stable_root.replica_count; k++)
 			providers.push_back(provider_list[k]);
 		// put list of providers
@@ -96,28 +123,43 @@ bool interval_range_query::writeRecordLocations(vmgr_reply &mgr_reply, node_dequ
 		);
 	}
 
-	// fill in the left siblings from the stable version if we intersect the stable root, or use it directly if not
+	// calculate the left and right leaf
+	boost::uint64_t page_size = mgr_reply.stable_root.page_size;
+	metadata::query_t left(query.id, query.version, (query.offset / page_size) * page_size, page_size);
+	metadata::query_t right(query.id, query.version,
+			((query.offset + query.size) / page_size -
+					((query.offset + query.size) % page_size == 0 ? 1 : 0)) * page_size, page_size);
+
+	// compute left and right sibling versions.
+	metadata::siblings_enum_t left_siblings, right_siblings;
+
+	mgr_reply.intervals.erase(mgr_reply.intervals.rbegin()->first);
+	compute_sibling_versions(left_siblings, left, mgr_reply.intervals,
+			mgr_reply.root_size);
+	compute_sibling_versions(right_siblings, right, mgr_reply.intervals,
+			mgr_reply.root_size);
+
+	// fill in the left siblings from the stable version if we intresect the stable root, or use it directly if not
 	DBG("stable root: " << mgr_reply.stable_root.node);
 	if (mgr_reply.stable_root.node.intersects(node_deque.front()))
 		dht->get(buffer_wrapper(mgr_reply.stable_root.node, true),
 				boost::bind(siblings_callback, dht, true,
 						boost::ref(node_deque.front()),
-						boost::ref(mgr_reply.left),
+						boost::ref(left_siblings),
 						mgr_reply.stable_root.node, _1
 				)
 		);
-	else if (vmgr_reply::search_list(mgr_reply.left,
+	else if (vmgr_reply::search_list(left_siblings,
 			mgr_reply.stable_root.node.offset,
 			mgr_reply.stable_root.node.size).empty())
-		mgr_reply.left.push_back(mgr_reply.stable_root.node);
+		left_siblings.push_back(mgr_reply.stable_root.node);
 
 	// fill in the missing right siblings from the stable version (only if it makes sense)
-
 	if (mgr_reply.stable_root.node.intersects(node_deque.back()))
 		dht->get(buffer_wrapper(mgr_reply.stable_root.node, true),
 				boost::bind(siblings_callback, dht, false,
 						boost::ref(node_deque.back()),
-						boost::ref(mgr_reply.right),
+						boost::ref(right_siblings),
 						mgr_reply.stable_root.node, _1
 				)
 		);
@@ -147,13 +189,13 @@ bool interval_range_query::writeRecordLocations(vmgr_reply &mgr_reply, node_dequ
 		// if I was a left child, get my right brother
 		if (position == metadata::LEFT_CHILD) {
 			uint64_t new_size = first_node.offset + first_node.size;
-			next_node = vmgr_reply::search_list(mgr_reply.right, new_size, first_node.size);
+			next_node = vmgr_reply::search_list(right_siblings, new_size, first_node.size);
 		}
 		// if I was a right child, get my left brother
 		if (position == metadata::RIGHT_CHILD) {
 			uint64_t new_size = first_node.offset - first_node.size;
 			next_node = first_node;
-			first_node = vmgr_reply::search_list(mgr_reply.left, new_size, next_node.size);
+			first_node = vmgr_reply::search_list(left_siblings, new_size, next_node.size);
 		}
 		node_deque.push_back(first_parent);
 		metadata::dhtnode_t node(false);
@@ -170,11 +212,12 @@ bool interval_range_query::writeRecordLocations(vmgr_reply &mgr_reply, node_dequ
 	dht->wait();
 	return result;
 }
-bool interval_range_query::writeRecordLocationsForListQuery(vmgr_reply &mgr_reply, node_deque_t &node_deque, metadata::replica_list_t &provider_list, metadata::list_query_t list_range) {
+
+bool interval_range_query::writeRecordLocationsForListQuery(vmgr_reply &mgr_reply, node_deque_t &node_deque, metadata::replica_list_t &provider_list) {
 	if (node_deque.empty())
 		return false;
 	bool result = true;
-
+	metadata::list_query_t list_range = mgr_reply.intervals.rbegin()->second.first;
 	DBG("root size = " << mgr_reply.root_size);
 	// first write the nodes in the queue
 	for (unsigned int ichunk = 0, iprovider = 0, inode = 0; ichunk < list_range.queries.size(); ichunk++) {
@@ -189,7 +232,7 @@ bool interval_range_query::writeRecordLocationsForListQuery(vmgr_reply &mgr_repl
 			// node.left keeps the page key
 			node.left = node_deque[inode];
 
-			node_deque[inode].version = mgr_reply.ticket;
+			node_deque[inode].version = list_range.queries[ichunk].version;
 			// node_deque[i].offset is set to the page's order number in that write
 			node_deque[inode].offset = list_range.queries[ichunk].offset;
 			for (unsigned int k = iprovider; result && k < iprovider + mgr_reply.stable_root.replica_count; k++)
@@ -211,6 +254,27 @@ bool interval_range_query::writeRecordLocationsForListQuery(vmgr_reply &mgr_repl
 		}
 	}
 
+	metadata::query_t query;
+	// compute left and right sibling versions.
+	metadata::siblings_enum_t left_siblings, right_siblings;
+
+	for (unsigned int ichunk = 0; ichunk < list_range.queries.size(); ichunk++) {
+		query = list_range.queries[ichunk];
+		// calculate the left and right leaf
+		boost::uint64_t page_size = mgr_reply.stable_root.page_size;
+		metadata::query_t left(query.id, query.version, (query.offset / page_size) * page_size, page_size);
+		metadata::query_t right(query.id, query.version,
+				((query.offset + query.size) / page_size -
+						((query.offset + query.size) % page_size == 0 ? 1 : 0)) * page_size, page_size);
+
+		//mgr_reply.intervals.erase(mgr_reply.intervals.rbegin()->first);
+		compute_sibling_versions(left_siblings, left, mgr_reply.intervals,
+				mgr_reply.root_size, query);
+		compute_sibling_versions(right_siblings, right, mgr_reply.intervals,
+				mgr_reply.root_size, query);
+	}
+
+
 	for (unsigned int ichunk = 0, inode = 0; ichunk < list_range.queries.size(); inode ++, ichunk++) {
 		// fill in the left siblings from the stable version if we intersect the stable root, or use it directly if not
 		DBG("stable root: " << mgr_reply.stable_root.node);
@@ -218,14 +282,14 @@ bool interval_range_query::writeRecordLocationsForListQuery(vmgr_reply &mgr_repl
 			dht->get(buffer_wrapper(mgr_reply.stable_root.node, true),
 					boost::bind(siblings_callback, dht, true,
 							boost::ref(node_deque[inode]),
-							boost::ref(mgr_reply.left),
+							boost::ref(left_siblings),
 							mgr_reply.stable_root.node, _1
 					)
 			);
-		else if (vmgr_reply::search_list(mgr_reply.left,
+		else if (vmgr_reply::search_list(left_siblings,
 				mgr_reply.stable_root.node.offset,
 				mgr_reply.stable_root.node.size).empty())
-			mgr_reply.left.push_back(mgr_reply.stable_root.node);
+			left_siblings.push_back(mgr_reply.stable_root.node);
 		DBG("Calculate missing right siblings");
 		// fill in the missing right siblings from the stable version (only if it makes sense)
 		inode += list_range.queries[ichunk].size / mgr_reply.stable_root.page_size -1;
@@ -233,7 +297,7 @@ bool interval_range_query::writeRecordLocationsForListQuery(vmgr_reply &mgr_repl
 			dht->get(buffer_wrapper(mgr_reply.stable_root.node, true),
 					boost::bind(siblings_callback, dht, false,
 							boost::ref(node_deque[inode]),
-							boost::ref(mgr_reply.right),
+							boost::ref(right_siblings),
 							mgr_reply.stable_root.node, _1
 					)
 			);
@@ -264,13 +328,13 @@ bool interval_range_query::writeRecordLocationsForListQuery(vmgr_reply &mgr_repl
 		// if I was a left child, get my right brother
 		if (position == metadata::LEFT_CHILD) {
 			uint64_t new_size = first_node.offset + first_node.size;
-			next_node = vmgr_reply::search_list(mgr_reply.right, new_size, first_node.size);
+			next_node = vmgr_reply::search_list(right_siblings, new_size, first_node.size);
 		}
 		// if I was a right child, get my left brother
 		if (position == metadata::RIGHT_CHILD) {
 			uint64_t new_size = first_node.offset - first_node.size;
 			next_node = first_node;
-			first_node = vmgr_reply::search_list(mgr_reply.left, new_size, next_node.size);
+			first_node = vmgr_reply::search_list(left_siblings, new_size, next_node.size);
 		}
 		node_deque.push_back(first_parent);
 		metadata::dhtnode_t node(false);

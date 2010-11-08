@@ -11,5 +11,4 @@ const boost::int32_t VMGR_GETOBJNO = 5;
 const boost::int32_t VMGR_CLONE = 6;
 const boost::int32_t VMGR_FCREATE = 7;
 const boost::int32_t VMGR_LIST_GETTICKET = 8;
-const boost::int32_t VMGR_LIST_PUBLISH = 9;
 #endif

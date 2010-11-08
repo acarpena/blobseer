@@ -44,7 +44,7 @@ add_subdirectory (lib)
 
 
 # The bindings are located in the "bindings" subdirectory
- add_subdirectory (bindings)
+add_subdirectory (bindings)
 
 add_subdirectory (test)
  

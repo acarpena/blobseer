@@ -32,7 +32,7 @@ public:
 			metadata::replica_list_t &provider_list);
 
 	bool writeRecordLocationsForListQuery(vmgr_reply &mgr_reply, node_deque_t &node_deque,
-			metadata::replica_list_t &provider_list, metadata::list_query_t list_range);
+			metadata::replica_list_t &provider_list);
 
 private:
 

@@ -60,9 +60,6 @@ int main(int argc, char *argv[]) {
     vmgr_server.register_rpc(VMGR_PUBLISH,
 			     (rpcserver_extcallback_t)boost::bind(&vmanagement::publish, 
 								  boost::ref(vmgr), _1, _2, _3));
-    vmgr_server.register_rpc(VMGR_LIST_PUBLISH,
-			     (rpcserver_extcallback_t)boost::bind(&vmanagement::publish_list,
-								  boost::ref(vmgr), _1, _2, _3));
     vmgr_server.register_rpc(VMGR_GETOBJNO,
 			     (rpcserver_extcallback_t)boost::bind(&vmanagement::get_objcount, 
 								  boost::ref(vmgr), _1, _2, _3));

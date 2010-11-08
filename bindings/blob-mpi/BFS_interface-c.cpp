@@ -110,3 +110,30 @@ extern "C" int blob_append(blob_t *blob, offset_t size, char *buffer) {
 
     return h->append(size, buffer);
 }
+
+int blob_read_list(blob_t *blob, id_t version, int blob_list_count, offset_t offsets[], offset_t sizes[], char *buffer, offset_t mem_size) {
+    bool ret = false;
+
+    BFS_interface *h = static_cast<BFS_interface *>(blob->obj);
+    try {
+	    ret = h->read_list(buffer, mem_size, blob_list_count, offsets, sizes,  version);
+    } catch (std::exception &e) {
+	std::cerr << "READ ERROR: " << e.what() << std::endl;
+	return 0;
+    }
+
+    if (!ret) {
+	std::cerr << "READ ERROR: " << std::endl;
+	return 0;
+    } else
+	return 1;
+
+}
+
+int blob_write_list(blob_t *blob, int blob_list_count, offset_t offsets[], offset_t sizes[], char *buffer, offset_t mem_size) {
+	  BFS_interface *h = static_cast<BFS_interface *>(blob->obj);
+
+	  return h->write_list(buffer, mem_size, blob_list_count, offsets, sizes);
+}
+
+

@@ -35,6 +35,10 @@ int blob_read(blob_t *blob, id_t version, offset_t offset, offset_t size, char *
 int blob_write(blob_t *blob, offset_t offset, offset_t size, char *buffer);
 int blob_append(blob_t *blob, offset_t size, char *buffer);
 
+int blob_read_list(blob_t *blob, id_t version, int blob_list_count, offset_t offsets[], offset_t sizes[], char *buffer, offset_t mem_size);
+
+int blob_write_list(blob_t *blob, int blob_list_count, offset_t offsets[], offset_t sizes[], char *buffer, offset_t mem_size);
+
 #ifdef __cplusplus
 }
 #endif
