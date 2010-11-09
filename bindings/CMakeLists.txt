@@ -1,5 +1,8 @@
 # Recurse through the directories
 
+# MPI-IO bindings
+	add_subdirectory (blob-mpi)
+	
 # FUSE bindings
 set(FUSE_ROOT ${EXTERNAL_ROOT})
 find_package(FUSE)

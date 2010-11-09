@@ -2,19 +2,27 @@
 # Comment as needed to reduce build time
 add_executable (create_blob create_blob.cpp)
 add_executable (test test.cpp)
-add_executable (file_uploader file_uploader.cpp)
+#add_executable (file_uploader file_uploader.cpp)
 add_executable (clone_test clone_test.cpp)
 add_executable (fuse_test fuse_test.cpp)
 #add_executable (appender appender.cpp)
 add_executable (basic_test basic_test.cpp)
 #add_executable (reader reader.cpp)
+add_executable (create_blob_mpi create_blob_mpi.cpp)
+add_executable (test_mpi test_mpi.cpp)
+add_executable (basic_list_IO_test basic_list_IO_test.cpp)
 
 # Link the executable to the necessary libraries.
 target_link_libraries (create_blob blobseer)
 target_link_libraries (test blobseer)
-target_link_libraries (file_uploader blobseer)
+#target_link_libraries (file_uploader blobseer)
 target_link_libraries (clone_test blobseer)
 target_link_libraries (fuse_test blobseer)
 #target_link_libraries (appender blobseer)
 target_link_libraries (basic_test blobseer)
 #target_link_libraries (reader blobseer)
+
+target_link_libraries (create_blob_mpi bfs-client)
+target_link_libraries (test_mpi bfs-client)
+
+target_link_libraries (basic_list_IO_test blobseer)

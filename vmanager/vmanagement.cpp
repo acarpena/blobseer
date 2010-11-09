@@ -1,6 +1,6 @@
 #include "vmanagement.hpp"
 #include "main.hpp"
-#define __DEBUG
+//#define __DEBUG
 #include "common/debug.hpp"
 
 vmanagement::vmanagement() : obj_count(0) {
@@ -117,11 +117,12 @@ rpcreturn_t vmanagement::get_ticket(const rpcvector_t &params, rpcvector_t &resu
 			mgr_reply.intervals = i->second.intervals;
 
 			query.version = page_version;
+			//INFO("[" << sender << " ] list_query " << list_query);
 		}
 	}
 	if (mgr_reply.intervals.size() > 0) {
 		result.push_back(buffer_wrapper(mgr_reply, true));
-		INFO("[" << sender << "] RPC success: allocated a new version (" << mgr_reply.intervals.rbegin()->first
+		INFO("[" << sender << "] RPC success: allocated a new version (" << mgr_reply.intervals.rbegin()->second.first
 				<< ") for request " << query << " {CAV}");
 		return rpcstatus::ok;
 	} else {
