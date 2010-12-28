@@ -1,0 +1,602 @@
+#!/bin/sh
+#
+# $Id: config-gfarm.in 3920 2008-04-05 15:47:50Z tatebe $
+
+${DEBUG:="false"} && set -xu
+PROGNAME=`basename $0`
+
+# Gfarm installation directory
+prefix="/Users/vitran/irisawork/Gfarm_blobSeer/gfarm_bin/"
+sysconfdir="${prefix}/etc"
+config_dir="${prefix}/share/gfarm/config"
+globus_location=""
+
+#
+# backend initialization
+#
+
+POSTGRESQL_TARGETS=postgresql
+LDAP_TARGETS=ldap
+# The order of $backend_candidates is important, it's used to choose default.
+backend_candidates="${POSTGRESQL_TARGETS} ${LDAP_TARGETS}"
+backend_all="postgresql ldap"
+backend_default=`echo $backend_candidates | awk '{print $1}'`
+if [ -z "$backend_default" ]; then
+	echo >&2 "$PROGNAME: no usable metadata backend is configured"
+	exit 1
+fi
+BACKEND_TYPE=$backend_default
+
+#
+#
+#
+
+PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH
+search_path="$PATH"
+
+awk=awk
+if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
+
+status=1
+sed_script=/tmp/cf$$
+admin_password=/tmp/ap$$
+password=/tmp/up$$
+rm -f $sed_script $password $admin_password
+trap 'rm -f $sed_script $password $admin_password; stty echo 2>/dev/null; exit $status' 0 1 2 15
+
+#
+# check whether shell function does work or not.
+#
+BOURNE_SHELL="${BOURNE_SHELL-/bin/sh}"
+if [ x"$1" = x--re-invoked ]; then
+	# shell function works with this shell, remove --re-invoked option
+	shift
+elif "$BOURNE_SHELL" -c 'shellfunc() { exit 0; }; shellfunc' 2>/dev/null; then
+	# shell function works
+	:
+else
+	# Search other shell that supports shell functions
+	for sh in ksh bash zsh sh ash bsh sh5; do
+		set `IFS=:;
+		 P="/bin:/usr/5bin:/usr/bin:/usr/local/bin:/usr/pkg/bin:$PATH";
+		 echo $P`
+		for dir
+		do
+			shell="$dir/$sh"
+			if ( [ -f "$shell" ] || [ -f "$shell.exe" ] ) &&
+				"$shell" -c 'shellfunc() { exit 0; };
+					shellfunc' 2>/dev/null
+			then
+				BOURNE_SHELL="$shell" exec "$shell" "$0" \
+					--re-invoked ${1+"$@"}
+			fi
+		done
+	done
+	echo "$PROGNAME: cannot find a shell which supports functions" >&2
+	exit 1
+fi
+
+# load backend-dependent functions. should be done after shell detection above.
+for i in $backend_all
+do
+  . $config_dir/config-gfarm.$i
+done
+
+gen_passwd()
+{
+	chars="=.0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	if [ -r /dev/urandom ]; then
+		# enough entropy, use 258bit(=log2(64)*43) key
+
+		dd if=/dev/urandom bs=44 count=1 2>/dev/null | od -d |
+		$awk '
+		BEGIN{
+			chars="'"$chars"'"
+			k=length(chars)
+			chars_per_word=2
+			l=43 # 43 characters, 256bits/log2(64) = 42.666
+		}
+		{
+			for (i = 2; i <= NF; i++) {
+				r = $i
+				for (j = 0; j < chars_per_word; j++) {
+					if (l <= 0)
+						exit
+					printf "%c", substr(chars, r%k + 1, 1)
+					r /= k
+					--l
+				}
+			}
+		}
+		END {
+			printf "\n"
+		}'
+	else
+		# 32bit entropy due to the seed, use 66bit(=log2(64)*11) key
+
+		$awk '
+		BEGIN {
+			chars="'"$chars"'"
+			k=length(chars)
+
+			srand(); now = srand();
+			srand('$$' * 12 * 60 * 60 + now)
+
+			for (i = 0; i < 11; i++) {
+				printf "%c", substr(chars, int(rand()*k)+1, 1)
+			}
+			printf "\n"
+			exit
+		}'
+	fi
+}
+
+usage()
+{
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f] [-W] [-w]"
+	echo >&2 "	[-b metadata_backend] [-V metadata_backend_version]"
+	echo >&2 "	[-U backend_admin_user] [-u backend_user]"
+	echo >&2 "	[-d domain_name] [-h hostname]"
+	echo >&2 "	[-l metadata_directory] [-L metadata_logging_directory]"
+	echo >&2 "	[-p metadata_backend_port]"
+	echo >&2 "	[-A metadata_admin_user] [-m gfmd_port] [-a auth_type]"
+	echo >&2 "  $BACKEND_TYPE backend options: (must be specified after -b <backend_type>)"
+	usage_$BACKEND_TYPE ||
+		echo >&2 "	no such option with backend=$BACKEND_TYPE"
+	echo >&2 "  available metadata_backend: $backend_candidates (default is $backend_default)"
+
+	exit 1
+}
+
+ABORT()
+{
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
+	exit 1
+}
+
+# most $BACKEND_TYPE uses the following as "service_start_$BACKEND_TYPE"
+# but some may not.
+service_start_common()
+{
+	if [ -f $RUN_DIR/$RC_BACKEND_BASENAME.pid ]; then
+		ctl=restart
+	else
+		ctl=start
+	fi
+	service_add $RC_BACKEND_BASENAME &&
+	service_ctl $RC_BACKEND_BASENAME $ctl ${1+"$@"} ||
+		ABORT "failed to $ctl $RC_BACKEND_BASENAME"
+}
+
+sanity()
+{
+	sanity_$BACKEND_TYPE
+}
+
+# most $BACKEND_TYPE calls the followings
+# from display_backend_params_$BACKEND_TYPE, but some may not.
+display_backend_data_dir_param()
+{
+    echo     "metadata     directory    [-l]: $BACKEND_DATA_DIR"
+}
+display_backend_log_dir_param()
+{
+    echo     "metadata log directory    [-L]: $BACKEND_LOG_DIR"
+}
+
+display_params()
+{
+    echo     "prefix [--prefix]: $CONFIG_PREFIX"
+    echo     "metadata backend    [-b]: $BACKEND_TYPE"
+    echo     "(available backend: $backend_candidates)"
+
+    display_backend_params_$BACKEND_TYPE
+
+    echo     "metaserver hostname [-h]: $BACKEND_HOSTNAME"
+    echo     "matadata admin user [-A]: $METADATA_ADMIN_USER"
+    echo     "matadata admin dn   [-D]: $METADATA_ADMIN_USER_GSI_DN"
+
+    display_backend_port_params_$BACKEND_TYPE
+
+    echo     "gfmd port  [-m]: $GFMD_PORT"
+    echo     "auth type  [-a]: $AUTH_TYPE"
+
+    display_backend_optional_params_$BACKEND_TYPE
+
+    sanity
+    exit 0
+}
+
+#
+# parse arguments
+#
+
+while [ $# -gt 0 ] ; do
+	case $1 in
+
+	# set parameters
+	  --prefix) shift; [ $# -ge 1 ] || usage
+		CONFIG_PREFIX=$1
+		;;
+	  -b) shift; [ $# -ge 1 ] || usage
+		( echo $backend_candidates; echo $backend_all ) |
+		$awk 'BEGIN { type="'"$1"'"; st=2 }
+		NR==1 { for (i = 1; i <= NF; i++) if ($i == type) {st=0;exit} }
+		NR==2 { for (i = 1; i <= NF; i++) if ($i == type) {st=1;exit} }
+		END { exit st }'
+		case $? in
+		0)	BACKEND_TYPE=$1;;
+		1)	echo >&2 "backend <$1> is not configured"; exit 1;;
+		*)	echo >&2 "unknown metadata backend <$1>"; exit 1;;
+		esac
+		;;
+	  -d) shift; [ $# -ge 1 ] || usage
+		DOMAIN_NAME=$1
+		;;
+	  -U) shift; [ $# -ge 1 ] || usage
+		BACKEND_ADMIN_USER=$1
+		;;
+	  -u) shift; [ $# -ge 1 ] || usage
+		BACKEND_USER=$1
+		;;
+	  -P) shift; [ $# -ge 1 ] || usage
+		BACKEND_PREFIX=$1
+		;;
+	  -V) shift; [ $# -ge 1 ] || usage
+		BACKEND_VERSION=$1
+		;;
+	  -l) shift; [ $# -ge 1 ] || usage
+		BACKEND_DATA_DIR=$1
+		;;
+	  -L) shift; [ $# -ge 1 ] || usage
+		BACKEND_LOG_DIR=$1
+		;;
+	  -h) shift; [ $# -ge 1 ] || usage
+		BACKEND_HOSTNAME=$1
+		;;
+	  -A) shift; [ $# -ge 1 ] || usage
+		METADATA_ADMIN_USER=$1
+		;;
+	  -D) shift; [ $# -ge 1 ] || usage
+		METADATA_ADMIN_USER_GSI_DN=$1
+		;;
+	  -p) shift; [ $# -ge 1 ] || usage
+		BACKEND_PORT=$1
+		;;
+	  -m) shift; [ $# -ge 1 ] || usage
+		GFMD_PORT=$1
+		;;
+	  -a) shift; [ $# -ge 1 ] || usage
+		case $1 in
+		sharedsecret|gsi_auth|gsi)
+			AUTH_TYPE=$1;;
+		*)
+			echo >&2 "$PROGNAME: the argument of -a option must be sharedsecret, gsi_auth or gsi."
+			exit 1;;
+		esac
+		;;
+
+	# control options
+	  --help)
+		usage
+		;;
+	  -S)
+		PRIVATE_MODE=true
+		;;
+	  -N)
+		START_SERVICE=false
+		;;
+	  -f)
+		FORCE=true
+		;;
+	  -t)
+		DISPLAY_PARAMS=true
+		;;
+	  -W)
+		stty -echo;
+		( umask 077; 
+		  printf "admin password: ";
+		  $awk 'NR==1{print $0;exit}' > $admin_password
+		  echo
+		)
+		stty echo
+		;;
+	  -w)
+		stty -echo;
+		( umask 077;
+		  printf "user password: ";
+		  $awk 'NR==1{print $0;exit}' > $password
+		  echo
+		)
+		stty echo
+		;;
+	  -*)
+		if parse_argument_$BACKEND_TYPE "$@"; then
+			shift $argshift
+		else
+			echo "unknown option $1"; usage
+		fi
+		;;
+	  *)
+		usage
+		;;
+	esac
+	shift
+done
+
+#
+# search default $BACKEND_PREFIX
+#
+
+set_default_backend_perfix_$BACKEND_TYPE
+
+. $config_dir/config-gfarm.sysdep
+
+#
+# default values
+#
+
+: ${CONFIG_PREFIX:=}
+
+set_first_defaults_$BACKEND_TYPE
+
+# NOTE: $CONFIG_PREFIX and $RC_BACKEND_BASENAME need to be set
+#	before calling sysdep_defaults
+# sysdep_defaults must set: $RC_DIR
+sysdep_defaults
+
+: ${PRIVATE_MODE:=false}
+: ${START_SERVICE:=true}
+: ${FORCE:=false}
+: ${DISPLAY_PARAMS:=false}
+
+: ${RUN_DIR:="$CONFIG_PREFIX/var/run"}
+
+if [ X"$CONFIG_PREFIX" != X ]; then
+	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
+else
+	: ${GFARM_CONF_DIR:="$sysconfdir"}
+fi
+: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
+: ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
+
+: ${METADATA_ADMIN_USER:=`who am i | awk '{print $1}'`}
+
+: ${AUTH_TYPE:="sharedsecret"}
+
+if $PRIVATE_MODE; then
+	: ${GFMD_PORT:="10601"}
+else
+	: ${GFMD_PORT:="601"}
+fi
+: ${RC_GFMD_IN="$config_dir/gfmd.in"}
+
+: ${RC_BACKEND_IN="$config_dir/$RC_BACKEND_BASENAME.in"}
+
+: ${FQ_HOSTNAME:=`fq_hostname`}
+
+: ${BACKEND_HOSTNAME:="$FQ_HOSTNAME"}
+[ X$BACKEND_HOSTNAME = X ] &&
+	ABORT 'cannot determine metadata server hostname, please specify it by -h option'
+
+set_last_defaults_$BACKEND_TYPE
+
+# -t option; display parameters
+$DISPLAY_PARAMS && display_params
+
+sanity || ABORT "aborted"
+
+#########################################################################
+
+# most $BACKEND_TYPE uses the following as part of "init_replace_$BACKEND_TYPE"
+# but some may not.
+init_replace_common()
+{
+	cat <<_EOF_
+s|@config_gfarm_backend_privilege@|$BACKEND_PRIVILEGE|g
+s|@config_gfarm_backend_admin_user@|$BACKEND_ADMIN_USER|g
+s|@config_gfarm_backend_user@|$BACKEND_USER|g
+s|@config_gfarm_backend_hostname@|$BACKEND_HOSTNAME|g
+s|@config_gfarm_backend_port@|$BACKEND_PORT|g
+s|@config_gfarm_backend_prefix@|$BACKEND_PREFIX|g
+s|@config_gfarm_backend_data_dir@|$BACKEND_DATA_DIR|g
+s|@config_gfarm_backend_log_dir@|$BACKEND_LOG_DIR|g
+_EOF_
+}
+
+init_replace()
+{
+	# create $sed_script for "replace" command
+
+	(
+	    umask 077
+	    (
+		cat <<_EOF_
+s|@config_gfarm_prefix@|$prefix|g
+s|@config_gfarm_gfarm_config@|$GFARM_CONF|g
+s|@config_gfarm_gfmd_config@|$GFMD_CONF|g
+s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|g
+s|@config_gfarm_metadata_admin_user@|$METADATA_ADMIN_USER|g
+s|@config_gfarm_gfmd_port@|$GFMD_PORT|g
+s|@config_gfarm_gfmd_option@|-f $GFMD_CONF|g
+s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|g
+s|@config_gfarm_run_dir@|$RUN_DIR|g
+s|@config_gfarm_auth_type@|$AUTH_TYPE|g
+_EOF_
+		$awk '{
+		printf "s|@config_gfarm_backend_admin_password@|%s|g\n", $0
+		}' $admin_password
+		$awk '{
+		printf "s|@config_gfarm_backend_password@|%s|g\n", $0
+		}' $password
+
+		init_replace_$BACKEND_TYPE
+
+	    ) > $sed_script
+	)
+}
+
+replace()
+{
+	sed -f $sed_script ${1+"$@"} | config_sysdep
+}
+
+mkcnf()
+{
+	# local out
+
+	out=$1
+	shift
+	if ${1+"$@"} >$out; then
+		echo created $out
+	else
+		ABORT "cannot create $out"
+	fi
+}
+
+mkscript()
+{
+	mkcnf ${1+"$@"}
+	chmod +x "$1" || ABORT "cannot chmod +x $1"
+}
+
+delete_file_or_directory()
+{
+	# local p
+
+	for p
+	do
+		[ -d "$p" ] && rmdir "$p" > /dev/null 2>&1
+		# [ -e "$p" ] isn't portable. not supported by Solaris /bin/sh
+		if ls -1d "$p" >/dev/null 2>&1; then
+			if $FORCE; then
+				rm -rf "$p"
+				echo removed "$p"
+			else
+				ABORT "$p already exist"
+			fi
+		fi
+	done
+}
+
+create_directory()
+{
+	# local d
+
+	for d
+	do
+		[ -d "$d" ] && continue
+		if mkdir -p "$d"; then
+			echo created "$d"
+		else
+			ABORT "mkdir -p $d, failed"
+		fi
+	done
+}
+
+# most $BACKEND_TYPE uses the following as "init_replace_$BACKEND_TYPE"
+# but some may not.
+
+#########################################################################
+
+delete_file_or_directory \
+	"$GFARM_CONF" \
+	"$GFMD_CONF" \
+	"$BACKEND_DATA_DIR" \
+	"$BACKEND_LOG_DIR" \
+	"$RC_DIR/$RC_BACKEND_BASENAME"
+
+# We won't create "$BACKEND_LOG_DIR", otherwise initdb of PostgreSQL fails.
+create_directory \
+	"$GFARM_CONF_DIR" \
+	"$BACKEND_DATA_DIR" \
+	"$RC_DIR" \
+	"$RUN_DIR"
+
+chmod 700 "$BACKEND_DATA_DIR"
+
+make_configuration_directory_$BACKEND_TYPE
+
+(
+umask 077
+[ -r $admin_password ] || gen_passwd > $admin_password
+[ -r $password ] || gen_passwd > $password
+)
+
+init_replace
+
+if [ -n "$BACKEND_PRIVILEGE" ]; then
+	chown "$BACKEND_PRIVILEGE" "$BACKEND_DATA_DIR" \
+		$admin_password $password
+	case `uname` in
+	SunOS|HP-UX|NetBSD|DragonFly)
+		# "-" option makes Solaris and HP-UX display /etc/motd,
+		# and it makes pkgsrc platforms (NetBSD/DragonFly) fail
+		# because pkgsrc doesn't create the home directory by default.
+		run_with_backend_privilege="su $BACKEND_PRIVILEGE -c /bin/sh";;
+	*)
+		# For SELinux we need to use 'runuser' not 'su'
+		[ -x /sbin/runuser ] && SU=/sbin/runuser || SU=su
+		run_with_backend_privilege="$SU - $BACKEND_PRIVILEGE -c /bin/sh"
+		;;
+	esac
+else
+	run_with_backend_privilege="/bin/sh"
+fi
+
+# this needs to be called before other "mkcnf" operations
+# to make some directories.
+mkcnf_gfmd_sysdep
+
+# create configuration files
+mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf.in"
+
+# for GSI authentication  (a service certificate is used)
+case $AUTH_TYPE in
+gsi_auth|gsi)
+	echo "spool_server_cred_type host" >> $GFARM_CONF
+	echo "spool_server_cred_service gfsd" >> $GFARM_CONF
+	;;
+*)
+	;;
+esac
+
+mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
+chmod 600 "$GFMD_CONF"
+# for GSI authentication
+if [ X"$METADATA_ADMIN_USER_GSI_DN" != X ]; then
+	echo "admin_user_gsi_dn \"$METADATA_ADMIN_USER_GSI_DN\"" >> $GFMD_CONF
+fi
+
+make_configuration_file_$BACKEND_TYPE
+
+# private user mode
+if $PRIVATE_MODE; then
+	GFSD_CONF="$GFARM_CONF_DIR/gfsd.conf"
+	USERMAP_FILE="$GFARM_CONF_DIR/usermap"
+	echo _gfarmfs `whoami` > $USERMAP_FILE
+	cp $GFARM_CONF $GFSD_CONF
+	echo local_user_map $USERMAP_FILE >> $GFMD_CONF
+fi
+
+# create run scripts
+mkscript "$RC_DIR/$RC_BACKEND_BASENAME"	replace "$RC_BACKEND_IN"
+mkscript "$RC_DIR/gfmd"			replace "$RC_GFMD_IN"
+
+apply_configuration_$BACKEND_TYPE
+
+if $START_SERVICE; then
+	service_start_$BACKEND_TYPE
+
+	if [ -f $RUN_DIR/gfmd.pid ]; then ctl=restart; else ctl=start; fi
+	service_add gfmd &&
+	service_ctl gfmd $ctl ||
+		ABORT "failed to $ctl gfmd"
+fi
+
+echo "$PROGNAME success"
+status=0
+# trap action automatically returns this $status as exit code

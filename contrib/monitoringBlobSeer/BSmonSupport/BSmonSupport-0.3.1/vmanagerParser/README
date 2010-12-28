@@ -1,0 +1,82 @@
+
+
+Monitoring BlobSeer version manager setup guide
+
+
+
+Dependencies:
+
+The BlobSeer Version Manager log parser has the following external dependencies:
+
+ 1. ApMon libraries.
+ 
+
+
+How to install ApMon libraries
+  
+Download the ApMon source files from the MonALISA website:
+
+http://monalisa.cacr.caltech.edu/download/apmon/ApMon_java-2.2.4.tar.gz
+
+
+Untar the archive and then execute the following steps:      
+  1. set the JAVA_HOME environment variable to the location where Java is 
+installed
+  2. Run the installation scripp:
+	./build_apmon.sh
+  The ApMon jar file (apmon.jar) will be installed in /lib.
+
+
+
+How to build the BlobSeer Version Manager log parser:
+
+Just like BlobSeer, the parser is built using CMake.
+The configuration file used by CMake is called CMakeLists.txt.
+
+This tutorial assumes the ApMon jar file is installed in the lib/ directory.
+
+If the library was manually installed in a different directory, its path has to be specified in the configuration file (CMakeLists.txt).
+The following paths can also be set in CMakeLists.txt to change the default ones:
+- APMON_ROOT -> the root prefix for the ApMon libraries
+             -> default value: ~/deploy  
+             -> this directory should contain the lib/ directory:
+                      - for the libraries or a subdirectory apmon that contains the libraries
+
+
+The Makefiles can now be generated using the cmake command for unix makefiles:
+
+cmake -G "Unix Makefiles"
+
+
+Build the project:
+
+make
+
+
+
+How to run the BlobSeer Version Manager Log Parser:
+
+A sample configuration file for ApMon is provided in the config directory (monitor.conf).
+
+When the Version Manager Log Parser is executed, the java command needs to have the classpath pointing to the apmon.jar library.
+The parser receives the path to the version manager's log as the first parameter.
+
+The command to run the parser (using the provided ApMon configuration file):
+
+export CLASSPATH = $PATH_TO_APMON/lib/apmon.jar:.
+java vmonitor/VManagerMonitor version_manager_log config/monitor.conf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

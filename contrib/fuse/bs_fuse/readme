@@ -1,0 +1,5 @@
+run //page_size buf_size in k
+./bs_fs /tmp/fuse /tmp/blobseer.cfg 64 1 64 -d -o direct_io
+
+umount 
+fusermount -u /tmp/fuse

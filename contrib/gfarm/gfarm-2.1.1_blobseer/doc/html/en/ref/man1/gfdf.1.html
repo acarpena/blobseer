@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfdf</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFDF.1"
+></A
+>gfdf</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfdf&nbsp;--&nbsp;display gfarm filesystem disk free space</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfdf</B
+>  -H <TT
+CLASS="REPLACEABLE"
+><I
+>hostfile</I
+></TT
+>  [-i]</P
+><P
+><B
+CLASS="COMMAND"
+>gfdf</B
+>  -h <TT
+CLASS="REPLACEABLE"
+><I
+>hostname</I
+></TT
+>...  [-i]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfdf</B
+> displays disk usage and free space of
+specified gfarm filesystem node.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-H</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+></DT
+><DD
+><P
+>Specifies a list of filesystem nodes. 
+The <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> consists of
+the hostname of a filesystem node in each line.  </P
+><P
+>If ``-'' is specified, standard input is used to read the host list.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-h</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+></DT
+><DD
+><P
+>Specifies the hostname of a filesystem node.
+This option can be used multple times.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-i</CODE
+></DT
+><DD
+><P
+>Displays i-node information instead of disk space information.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>Displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfhost</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm.conf</SPAN
+>(5)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

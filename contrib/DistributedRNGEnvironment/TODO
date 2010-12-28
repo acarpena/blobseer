@@ -1,0 +1,8 @@
+HAVEGE 2.0
+==========
+
+ * Use havegeBS's CMakeLists.txt to build HAVEGE 2.0 library and make it a dependency of havegeBS
+     or make HAVEGE 2.0 an external dependency of havegeBS
+ * Make more architecture available through cmake build system (Core2 / Xeon only right now)
+ * PersoArchHAVEGE2.0.h : tweak the CORE2 architecture to fit the needs of Windows OS, and
+     validate ANDPT constant

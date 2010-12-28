@@ -1,0 +1,182 @@
+Gfarm FAQ - Frequently Asked Questions about Gfarm
+
+Copyright (c) 2003-2008 National Institute of Advanced Industrial
+Science and Technology (AIST).  All Rights Reserved.
+
+Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
+
+Table of Contents:
+******************
+
+1. General
+  1.1 What is Gfarm?
+  1.2 Where can I download Gfarm?
+
+2. Trouble Shooting
+  2.1 We cannot connect to filesystem nodes and/or a metadata server.
+  2.2 "Authentication error" or "no filesystem node" error occurs when
+     accessing or replicating files.
+  2.3 Due to a disk crash, all files in a filesystem node are lost.
+     What do we have to do?
+  2.4 Sometimes a gfarm client or gfsd stops without doing anything.
+
+3. Security
+  3.1 It is safe to use Gfarm in an environment that is NOT protected by
+     a firewall?
+  3.2 What is the difference in sharedsecret authentication,
+     the gsi_auth method, and gsi authentication?
+
+4. Limitations
+  4.1 The following functionality is partially supported.
+  4.2 The following functionalities supported by Gfarm-1.x are not
+     supported yet.
+  4.3 The following functionality supported by Gfarm-1.x is not
+     supported.
+    
+
+1. General
+**********
+  1.1 What is Gfarm?
+
+	Please refer to the following URL:
+
+		http://datafarm.apgrid.org/
+
+  1.2 Where can I download Gfarm?
+
+	It is available at the following URL:
+
+		http://sourceforge.net/projects/gfarm/
+
+	Current source code can be obtained by
+
+		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/trunk gfarm_v2
+		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm2fs/trunk gfarm2fs
+
+2. Trouble Shooting
+*******************
+  2.1 We cannot connect to filesystem nodes and/or a metadata server.
+
+	As the default setting, 600/tcp and 600/udp have to be opened for
+	filesystem nodes, and 601/tcp have to be opened	for a metadata
+	server.
+
+	When 'gfhost -lv' reports 'x.xx/x.xx/x.xx', these filesystem
+	nodes cannot be connected by a client using 600/udp.
+
+	The port number can be specified by a command-line option of
+	config-gfarm and config-gfsd.  For details,
+	refer to the installation manual.
+
+  2.2 "Authentication error" or "no filesystem node" error occurs when
+     accessing or replicating files.
+
+	A shared secret key is not set up correctly.  Make sure the
+	same shared secret key file (~/.gfarm_shared_key) is located
+	on a home directory on all file system nodes.
+
+	If the problem is still there, call administrators of a Gfarm
+	file system.  A shared secret key setting might be incorrect
+	for a _gfarmfs user.
+
+  2.3 Due to a disk crash, all files in a filesystem node are lost.
+     What do we have to do?
+
+	When a filesystem node is down, there is nothing you have to
+	do when there is at least one file copy, since the unavailable
+	filesystem node is not used.
+
+	However, when you re-join the filesystem node that loses files
+	to the Gfarm file system, a problem occurs since invalid
+	metadata of lost file replicas remains in a metadata database.
+	We have a plan to provide an administration command to re-join
+	the filesystem node.
+
+  2.4 Sometimes a gfarm client or gfsd stops without doing anything.
+
+	If your network interface card or your network itself has a
+	trouble that lasts more than a few minutes, such symptoms may occur.
+	The possibility increases if you are using a wide
+	area network for communication between a gfarm client and a server.
+	A stopped gfarm client or gfsd is able to exit automatically
+	with an error, if you add a "sockopt keepalive" setting to your
+	gfarm.conf. The config-gfarm command generates this setting
+	by default, since gfarm 1.3.1.
+
+	Or, if you are using "ldap" in /etc/nsswitch.conf on some Linux
+	distributions, this problem may occur too.  This problem is
+	observed in Fedora Core 3, Fedora Coer 5 and CentOS 4.4, but
+	haven't been observed in Red Hat 8.
+	The cause of this problem is a bug of system-supplied libraries.
+	The detailed condition of this bug is described in KNOWN_PROBLEMS.en.
+	For this problem, currently no workaround is known except disabling
+	the "ldap" feature.
+
+3. Security
+***********
+  3.1 It is safe to use Gfarm in an environment that is NOT protected by
+     a firewall?
+
+	Gfarm-2.x supports three authentication methods, namely,
+	sharedsecret authentication, the gsi_auth method,
+	and gsi authentication.
+	The sharedsecret authentication and gsi_auth methods are
+	not safe enough in the Internet environment.
+	Please refer to the next question for further information about this
+	issue.
+
+  3.2 What is the difference in sharedsecret authentication,
+     the gsi_auth method, and gsi authentication?
+
+	The "sharedsecret" authentication method in Gfarm is authentication
+	based on a shared key, which provides only authentication
+	service, not data signing and data encryption services. Thus,
+	this method still has risks of packet sniffing and TCP
+	session hijacking.
+	For this reason, we recommend that you use the sharedsecret
+	authentication only in a safe environment, protected by a
+	firewall.  The reason we provide this authentication
+	method is that it is fast, and it does not require you to acquire
+	a public key.
+
+	The "gsi" (Grid Security Infrastructure) authentication method is
+	authentication based on a public key infrastructure.  Gfarm uses
+	the Globus GSI library for this authentication.	Because the
+	Globus GSI library supports data encryption, the gsi
+	authentication is considered more secure than the sharedsecret
+	authentication in Gfarm.  But please note that some exportable
+	versions of Globus don't support encryption.  We recommend that you
+	confirm that your Globus version does, in fact, support
+	encryption.
+
+	The "gsi_auth" method uses the GSI library only for
+	the authentication. The actual data communication is not protected
+	by data signing or data encryption services with this method.
+	Thus, the gsi_auth method has risks of packet sniffing and
+	TCP session hijacking, just like sharedsecret authentication.
+	For this reason, we recommend you use the gsi_auth method
+	only in a safe environment, protected by a firewall.
+	The reason we provide this method is that it allows for fast
+	data transfer.
+
+	The gsi authentication and gsi_auth methods are only
+	available when you use the --with-globus option at thetime you do
+	the source code "configure" operation.
+	Please see the following URL for more about the GSI:
+		http://www.globus.org/
+
+4. Limitations
+*************
+  4.1 The following functionality is partially supported.
+
+	Group management command
+
+  4.1 The following functionalities supported by Gfarm-1.x are not
+     supported yet.
+
+	File view
+
+  4.2 The following functionality supported by Gfarm-1.x is not
+     supported.
+
+	Remote program execution

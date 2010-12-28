@@ -1,0 +1,29 @@
+<project name="LoggingServer">
+
+  <!-- set global properties for this build -->
+  <property name="src" location="src/"/>
+  <property name="build" location="build/"/>
+  
+  <path id="project.classpath">
+	<pathelement location="${build}"/>
+  </path>
+
+  <target name="init">
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="build" depends="init">
+    <javac
+      srcdir="${src}"
+      destdir="${build}"
+      >
+      <classpath refid="project.classpath"/>
+  <!--    <compilerarg value="-Xlint"/>  -->
+    </javac>
+  </target>
+
+  <target name="clean" depends="init">
+      <delete dir="${build}"/>
+  </target>
+  
+</project>

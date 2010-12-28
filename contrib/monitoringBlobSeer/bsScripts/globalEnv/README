@@ -1,0 +1,26 @@
+
+The most important environment variables that have to be set are:
+
+USING_G5K - true if the scripts use a Grid5000 reservation and false otherwise
+
+G5K_DEPLOY_HOME - the path to the scripts root folder
+This variable is followed by relative paths to all the components that have associated scripts.
+
+
+SSH options - the CONNECTOR used to access other machines (typically is SSH for non-Grid5000 deployment)
+
+JAVA_HOME - the path to Java
+
+BLOBSEER_HOME - the path to the used BlobSeer distribution used
+
+USER - the user name that executes the scripts
+
+CLUSTERS - variable used only for the deployment on Grid5000
+
+LOCAL_DIR - the path to a local directory on each machine, where the user has rw rights
+
+ RESULTS - the directory which will contain the logs for the executed processes
+
+
+
+

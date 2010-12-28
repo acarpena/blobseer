@@ -1,0 +1,421 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfrep</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFREP.1"
+></A
+>gfrep</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfrep&nbsp;--&nbsp;Gfarm ファイルの複製を作成する．</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -H <VAR
+CLASS="REPLACEABLE"
+>ホスト指定ファイル</VAR
+>  [-vm]  <VAR
+CLASS="REPLACEABLE"
+>gfarm-URL</VAR
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -P <VAR
+CLASS="REPLACEABLE"
+>ホスト対指定ファイル</VAR
+>  [-vm]  <VAR
+CLASS="REPLACEABLE"
+>gfarm-URL</VAR
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -d <VAR
+CLASS="REPLACEABLE"
+>複製先ホスト</VAR
+>  [-s <VAR
+CLASS="REPLACEABLE"
+>複製元ホスト</VAR
+>] [-I <VAR
+CLASS="REPLACEABLE"
+>ファイルセクション</VAR
+>] [-vm]  <VAR
+CLASS="REPLACEABLE"
+>gfarm-URL</VAR
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+> [-D <VAR
+CLASS="REPLACEABLE"
+>複製先ドメイン名</VAR
+>] [-S <VAR
+CLASS="REPLACEABLE"
+>複製元ドメイン名</VAR
+> | -s <VAR
+CLASS="REPLACEABLE"
+>複製元ホスト</VAR
+>] [-N <VAR
+CLASS="REPLACEABLE"
+>複製数</VAR
+>] [-v]  <VAR
+CLASS="REPLACEABLE"
+>gfarm-URL</VAR
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>引数 <TT
+CLASS="PARAMETER"
+><I
+>Gfarm-URL</I
+></TT
+> で指定したファイルの複製を，
+指定されたホストに作成します．</P
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>Gfarm-URL</I
+></TT
+> がディレクトリの場合，
+そのディレクトリを再帰的に複製します．</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><VAR
+CLASS="OPTION"
+>-D</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>複製先ドメイン名</I
+></TT
+></DT
+><DD
+><P
+>ファイルの複製を作成する先のホストのドメイン名を指定します．
+このオプションは単独で，あるいは，<VAR
+CLASS="OPTION"
+>-S</VAR
+>
+や <VAR
+CLASS="OPTION"
+>-s</VAR
+> オプションと共に用います．</P
+><P
+>このオプションも <VAR
+CLASS="OPTION"
+>-d</VAR
+> オプションも指定しない場合，
+メタデータに登録された全ホストのいずれかに複製を作成します．
+<VAR
+CLASS="OPTION"
+>-N</VAR
+> オプションの項も参照してください．</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-d</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>複製先ホスト</I
+></TT
+></DT
+><DD
+><P
+>複製作成先のホスト名を1つだけ指定します．
+このオプションは単独で，あるいは，<VAR
+CLASS="OPTION"
+>-s</VAR
+> 
+オプションと共に用います．</P
+><P
+>このオプションも <VAR
+CLASS="OPTION"
+>-D</VAR
+> オプションも指定しない場合，
+メタデータに登録された全ホストのいずれかに複製を作成します．</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-H</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト指定ファイル</I
+></TT
+></DT
+><DD
+><P
+>各フラグメントの複製を作成するホスト名のリストを記述した
+ファイル名を指定します．
+ホスト名は，ファイル中の各行に一ホストずつ記述します．
+指定したホスト名の数がフラグメントの数よりも少ない場合，
+フラグメントの数と一致するまでホスト名のリストを繰り返し指定した
+ものと見なします．</P
+><P
+>ファイル名として ``-'' を指定した場合，標準入力からホス
+ト名のリストを読み込みます．</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-I</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>ファイルセクション</I
+></TT
+></DT
+><DD
+><P
+>このオプションで指定した名前のセクションのみ，複製を作成します．
+現在のところ，このオプションは，<VAR
+CLASS="OPTION"
+>-d</VAR
+> オプションを指定した
+場合にしか動作しません．</P
+><P
+>このオプションは省略できます．</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-m</VAR
+></DT
+><DD
+><P
+>複製ではなく移動を行ないます．
+現在のところ，このオプションは，<VAR
+CLASS="OPTION"
+>-H</VAR
+>，<VAR
+CLASS="OPTION"
+>-P</VAR
+>,
+<VAR
+CLASS="OPTION"
+>-d</VAR
+> オプションを指定した場合にしか動作しません．</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-N</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>複製数</I
+></TT
+></DT
+><DD
+><P
+>必要な複製の数を指定します．
+複製先に，指定された数以上の複製が既に存在する場合は，
+複製の作成も削除も行いません．
+このオプションは単独で，あるいは <VAR
+CLASS="OPTION"
+>-D</VAR
+>，
+<VAR
+CLASS="OPTION"
+>-S</VAR
+>，<VAR
+CLASS="OPTION"
+>-s</VAR
+> オプションと共に用います．</P
+><P
+>このオプションを省略すると <VAR
+CLASS="OPTION"
+>-N 1</VAR
+> と指定された
+ものとみなされます．</P
+><P
+><VAR
+CLASS="OPTION"
+>-S</VAR
+> オプションあるいは <VAR
+CLASS="OPTION"
+>-s</VAR
+>
+オプションで指定された複製元のホストは，複製を作成する対象ホストから
+除外されます．
+つまり，<VAR
+CLASS="OPTION"
+>-S</VAR
+> オプションあるいは <VAR
+CLASS="OPTION"
+>-s</VAR
+>
+オプションで指定された以外のホストに，<VAR
+CLASS="OPTION"
+>-N</VAR
+> で指定した
+数以上の複製が存在することを保証します．
+ただし，複製対象のホストが，複製元のホストの部分集合である
+場合には除外されません．複製対象が存在しなくなってしまうからです．
+例えば「-N 3 -S subdomain.example.org -D example.org」と指定して実行すると，
+結果として，example.org に属すが subdomain.example.org には属さないホストに，
+3つ以上の複製が存在することが保証されます．</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-P</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト対ファイル</I
+></TT
+></DT
+><DD
+><P
+>複製元のホストと複製先のホストの対のリストを記述した
+ファイル名を指定します．
+ファイルの各行には，複製元ホストと複製先ホストを，この順で空白で
+区切って指定します．
+指定した Gfarm-URL を構成するファイルが，複製元ホストに存在する場合のみ，
+そのファイルを複製先ホストにコピーします．</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-S</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>複製元ドメイン名</I
+></TT
+></DT
+><DD
+><P
+>ファイル複製元のホストのドメイン名を指定します．
+このオプションは単独で，あるいは，<VAR
+CLASS="OPTION"
+>-D</VAR
+>
+オプションと共に用います．</P
+><P
+>このオプションも <VAR
+CLASS="OPTION"
+>-s</VAR
+> オプションも指定しない場合，
+複製元のホストは，全ノードから選ばれます．</P
+><P
+>また，このオプションで指定されたホストは，複製を作成する対象ホスト
+から除外されます．
+詳しくは <VAR
+CLASS="OPTION"
+>-N</VAR
+> オプションの項を参照してください．</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-s</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>複製元ホスト</I
+></TT
+></DT
+><DD
+><P
+>ファイル複製元のホスト名を指定します．
+このオプションは単独で，あるいは，<VAR
+CLASS="OPTION"
+>-D</VAR
+>
+や <VAR
+CLASS="OPTION"
+>-d</VAR
+> オプションと共に用います．</P
+><P
+>このオプションも <VAR
+CLASS="OPTION"
+>-s</VAR
+> オプションも指定しない場合，
+複製元のホストは，全ノードから選ばれます．</P
+><P
+>また，このオプションで指定されたホストは，複製を作成する対象ホスト
+から除外されます．
+詳しくは <VAR
+CLASS="OPTION"
+>-N</VAR
+> オプションの項を参照してください．</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-v</VAR
+></DT
+><DD
+><P
+>複製処理に関して，冗長な表示を行ないます，</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-?</VAR
+></DT
+><DD
+><P
+>引数オプションを表示します．</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

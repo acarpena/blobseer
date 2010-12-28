@@ -1,0 +1,54 @@
+
+
+This package is developed to create BlobSeer clients that access the system in an illegal way. 
+
+It links against the BlobSeer source code and the C++ logging service.
+
+There are 3 types of malicious operations: 
+	- writing to the providers without publishing the version to the version manager
+	- publishing to the version manager some writes that don't exist
+	- publishing to the version manager a different number of written pages than the one actually written on the providers.
+For each malicious operation, a different client can be created. This is done by compiling the following client classes that extend a modified BlobSeer client:
+	- client_iw.cpp
+	- client_pnw.cpp
+	- client_wnp.cpp
+
+The class "malicious_client.cpp" runs any type of client, according to a parameter passed to it at runtime. The client type can be:
+	- 0 - normal client
+	- 1 - publish no write
+	- 2 - write no publish
+	- 3 - incorrect writes 
+
+
+
+The project is built using CMake.
+The configuration file used by CMake is called CMakeLists.txt.
+
+The default configuration provided in the CMakeLists.txt uses the 0.3.1 BlobSeer version and assumes BlobSeer is installed in:
+                ~/Work/blobseer/tags/release-0.3.1
+
+The path for the logging client for C++ is set to:
+		~/Work/blobseer/contrib/logging_service/logging_client_cpp
+
+If BlobSeer or the logging client are installed somewhere else, the lines that set the values for BLOBSEER_SOURCE_DIR and LOGGING_SOURCE_DIR have to be modified accordingly.
+
+
+The Makefile can now be generated using the cmake command for unix makefiles:
+
+cmake -G "Unix Makefiles"
+
+
+Build the project:
+
+make
+
+
+The generated classes and libraries can be cleaned using:
+
+make clean
+
+
+The program can be run in the folowing way:
+./$MALICIOUS_CLIENTS_ROOT/client_tests/malicious_client
+
+

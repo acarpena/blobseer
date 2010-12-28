@@ -1,0 +1,100 @@
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009) (format=pdflatex 2010.5.18)  26 MAY 2010 14:09
+entering extended mode
+ file:line:error style messages enabled.
+ %&-line parsing enabled.
+**\input source-guide.tex
+(./source-guide.tex
+(/usr/local/texlive/2009/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+(/usr/local/texlive/2009/texmf-dist/tex/latex/base/size11.clo
+File: size11.clo 2007/10/19 v1.4h Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+No file source-guide.aux.
+\openout1 = `source-guide.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+[1
+
+{/usr/local/texlive/2009/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+No file source-guide.toc.
+\tf@toc=\write3
+\openout3 = `source-guide.toc'.
+
+[2] [1]
+Overfull \hbox (9.06989pt too wide) in paragraph at lines 188--194
+\OT1/cmr/m/n/10.95 ers to ap-pro-pri-ate func-tions for a given file sys-tem ty
+pe. "Generic" func-tions, de-fined in adio/common,
+ []
+
+[2]
+Missing character: There is no Å in font cmr10!
+Missing character: There is no Ô in font cmr10!
+
+Overfull \hbox (24.39084pt too wide) in paragraph at lines 243--246
+[]\OT1/cmr/m/n/10.95 The fi-nal cat-e-gory of generic func-tions are the "nave"
+ func-tions (e.g. ADIOI[]GEN[]WriteStrided[]naive
+ []
+
+[3] [4]
+Overfull \hbox (21.79182pt too wide) in paragraph at lines 339--343
+[]\OT1/cmr/m/n/10.95 ROMIO im-ple-ments two-phase I/O as part of the generic im
+-ple-men-ta-tions of ADIO[]WriteStridedColl
+ []
+
+[5]
+Overfull \hbox (6.87184pt too wide) in paragraph at lines 396--398
+[]\OT1/cmr/m/n/10.95 ADIOI[]ReadContig(ADIO[]File fd, void *buf, int count, MPI
+[]Datatype datatype, int file[]ptr[]type,
+ []
+
+
+Overfull \hbox (9.1835pt too wide) in paragraph at lines 408--410
+[]\OT1/cmr/m/n/10.95 ADIOI[]WriteContig(ADIO[]File fd, void *buf, int count, MP
+I[]Datatype datatype, int file[]ptr[]type,
+ []
+
+[6] [7] (./source-guide.aux) ) 
+Here is how much of TeX's memory you used:
+ 221 strings out of 493848
+ 2410 string characters out of 3149207
+ 53936 words of memory out of 3000000
+ 3578 multiletter control sequences out of 15000+200000
+ 6627 words of font info for 24 fonts, out of 3000000 for 9000
+ 714 hyphenation exceptions out of 8191
+ 21i,5n,19p,226b,148s stack positions out of 5000i,500n,10000p,200000b,50000s
+</usr/local/texlive/2009/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2009/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2009/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmr10.pfb></usr/local/texlive/2009/texmf-dist/fonts/type1/publi
+c/amsfonts/cm/cmti10.pfb></usr/local/texlive/2009/texmf-dist/fonts/type1/public
+/amsfonts/cm/cmti12.pfb></usr/local/texlive/2009/texmf-dist/fonts/type1/public/
+amsfonts/cm/cmtt10.pfb>
+Output written on source-guide.pdf (9 pages, 123696 bytes).
+PDF statistics:
+ 56 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+

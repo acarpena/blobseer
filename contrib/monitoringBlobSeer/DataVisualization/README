@@ -1,0 +1,64 @@
+
+
+This is a patching package for the MonALISA repository.
+
+It is built using CMake.
+The configuration file used by CMake is called CMakeLists.txt.
+
+The default configuration provided in the CMakeLists.txt assumes the MonALISA repository is installed in the local home directory:
+                ~/MLrepository
+
+If the repository is installed somewhere else, the line that sets the value for REPOS_ROOT has to be modified accordingly.
+The path to JAVA_HOME has to be modified too, in case the environment variable JAVA_HOME is not set and java is installed in a different directory than the default one (/usr).
+
+This package will install the following components into the repository:
+	- the filter needed to collect the monitoring data and to save it into the database (${REPOS_ROOT}/lib/BSfilter.jar)
+	- the visualization components
+		- ${REPOS_ROOT}/tomcat/webapps/ROOT/WEB-INF/lib/BSMonitoring.jar
+		- JSP files in ${REPOS_ROOT}/tomcat/webapps/ROOT
+	- the configuration files with the appropriate settings that enable the charts related to BlobSeer:
+		- ${REPOS_ROOT}/tomcat/webapps/ROOT/js/menu.js
+		- ${REPOS_ROOT}/tomcat/webapps/ROOT/WEB-INF/web.xml
+		- ${REPOS_ROOT}/JStoreClient/conf/App.properties
+
+
+The Makefile can now be generated using the cmake command for unix makefiles:
+
+cmake -G "Unix Makefiles"
+
+
+Build the project:
+
+make
+
+
+The necessary files can now be installed into the MonALISA repository:
+
+make install
+
+
+The generated classes and libraries can be cleaned using:
+
+make clean
+
+
+How to run the MonALISA repository using the new configuration:
+
+The repository can be started with with its default command:
+./$REPOSITORY_HOME/start.sh
+It will use the embedded Postgres database, as specified in the App.properties configuration file.
+
+#Default Values used in 'pgsql_store'
+lia.Monitor.ServerName = 127.0.0.1
+lia.Monitor.DatabaseName = mon_data
+lia.Monitor.DatabasePort = 5544
+lia.Monitor.UserName = mon_user
+lia.Monitor.Pass = mon_pass
+
+The repository now monitors the BlobMonitor group and it collects all the parameters needed by the BlobSeer visualization module.
+
+After running the repository start command, the web server is started and can be accessed at:
+	http://localhost:8080
+
+
+

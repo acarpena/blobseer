@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+	<property>
+		<name>fs.bsfs.metaServerHost</name> <value>localhost</value>
+		<description>The location of the meta server.</description>
+	</property>
+ 
+	<property>
+		<name>fs.bsfs.metaServerPort</name>
+		<value>9000</value>
+		<description>The location of the meta server's port.</description>
+	</property>
+
+	<property>
+		<name>fs.bsfs.blobseerConfig</name>
+		<value>/tmp/blobseer.cfg</value>
+		<description>The configuration file for blobseer.</description>
+	</property>
+
+	<property>
+		<name>fs.default.name</name>
+		<value>bsfs://localhost:9000</value>
+	</property>
+	
+	<property>
+		<name>fs.bsfs.impl</name>
+		<value>org.apache.hadoop.fs.bsfs.BlobSeerFileSystem</value>
+		<description>The FileSystem for blobseer</description>
+	</property>
+
+	<property>
+		<name>fs.bsfs.page.size</name>
+		<value>67108864</value>
+		<description>Page size to use when writing files to BFSF.</description>
+	</property>
+	
+	<property>
+		<name>fs.bsfs.cache.size</name>
+		<value>1</value>
+		<description>Buffer size in number of pages.</description>
+	</property>
+</configuration>

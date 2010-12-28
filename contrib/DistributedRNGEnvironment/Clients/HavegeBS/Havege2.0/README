@@ -1,0 +1,21 @@
+The HAVEGE2.0 sources consists of: 
+
+HAVEGE2.0.c PersoArchHAVEGE2.0.h LoopBody.h  OneIteration.h HavegeInline.h 
+and one assembly file per ISA/OS couples  HardClock(Arch).s
+
+
+Remaining C and h files are provided for convenience to test HAVEGE2.0 
+in terms of performance and quality of the uniform distribution.
+Three wrappers mainnd.c, maincryptond.c  and mainspeed.c are provided 
+for this purpose. 
+
+
+CAUTION: When generating new versions of HAVEGE2.0(Arch).o(bj) and 
+HAVEGE2.0inline(Arch).o, users should be cautious to use 
+the same compiler and compiler options that were originally used: numbers 
+of iterations in LoopBody.h were tuned in order to get the executable code 
+for the main HAVEGE loop just fitting in the instruction cache
+ 
+
+
+

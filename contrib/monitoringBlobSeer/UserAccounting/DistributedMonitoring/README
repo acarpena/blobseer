@@ -1,0 +1,76 @@
+*************
+HOW TO BUILD:
+*************
+
+In the CMakeLists.txt file set PROJECT_ROOT the path to where the project folder is located. 
+Set JAVA_HOME the path to the jdk you want to use for compiling the project (in case you need to change between x64 java or x32). 
+After editing generate makefiles: e.g. cmake -G "Unix Makefiles" (for unix platforms). 
+Build the project running "make" command and clean it using "make clean".
+The classes are created inside the build folder. The lib directory contains jars needed to compile the sources.
+
+*****************
+HOW TO CONFIGURE:
+*****************
+
+The MonALISA filter:
+
+	--- In the ml.properties file, set the path to the directory where the filter has its .class file. The parameter that must be defined is lia.Monitor.CLASSURLs, and if
+there are more filters/directories they have to be separated by commas. The trailing
+"/" on the end of each of the paths is essential; the class will fail to load without it. Example:
+
+		lia.Monitor.CLASSURLs = file : ${path to BsMonFilter.class file}/
+
+	--- Also, in the ml.properties one must specify the name of the filters that should be loaded:
+
+		lia.Monitor.ExternalFilters = processing.filters.BSMonFilter
+
+	--- The configured filter requires 4 additional parameters that must be set in the ml.properties file of MonALISA:
+		--- BSMonFilter.ConfigFile - contains the values of the PREDICATES parameters that
+		must be set by the user. It specifies a list of predicates to filter a desired set of
+		results, in the following format: F/C/N/Param1jParam2j...jParamn, where:
+			F - Farm Name
+			C - Cluster Name
+			N - Node Name
+			Param_x - Param Name
+
+		--- BSMonFilter.nodeFile - the path to a text file containing the list of nodes to which
+		the monitoring data will be sent for processing. The format of the file must be
+		"hostname port" on each line. The filter acts as a client to those nodes and will try
+		to connect to them on the given port.
+
+		--- BSMonFilter.Port - the default port on which to connect to the nodes in the nodefile,
+		in case no port is specified for one or more hosts.
+
+		--- BSMonFilter.filterTimeout - the delay between sending the monitoring data to processing
+		nodes
+
+The processing nodes: require a .properties file in which information about the database used by that node is given. 
+
+The black list module: requires a list with all the hostnames of the processing nodes and the ports on which they listen for connections, the same as MonALISA.
+
+Sample configuration files are found in the conf directory of the project. 
+
+***************
+HOW TO DEPLOY:
+***************
+
+On the MonALISA nodes make sure all the configuration files and the filter class are in place before starting the service. The configuration is loaded only once, at startup. You can check the MonALISa log file to see if the filter class was loaded successfully.
+
+On a processing node start the local database server and create the database before starting the java process.
+Then start the processing java threads with:
+
+export DM_PROJECT_HOME={path to project directory}
+cd $DM_PROJECT_HOME
+
+{path to java} -classpath $DM_PROJECT_HOME/lib/log4j-1.2.15.jar:$DM_PROJECT_HOME/build/:. processing.NodeApp {path to .properties file} delay port
+
+java -classpath $DM_PROJECT_HOME/lib/log4j-1.2.15.jar:$DM_PROJECT_HOME/lib/postgresql-8.4-701.jdbc4.jar:$DM_PROJECT_HOME/lib/MSRC_WEB.jar:$DM_PROJECT_HOME/lib/FarmMonitor.jar:$DM_PROJECT_HOME/build/:. processing.NodeApp ~/monalisa/MonaLisa/Service/myFarm/ml.properties 5 9000
+
+The delay represents timeout for the periodical processing performed on some layers. The port is the one that the node will listen for connections on.
+Use the same java specified for compiling in CMakeLists.txt.
+
+On the node computing the black list, start the process with:
+{path to java} -classpath lib/*:build/:. processing.feedback.BlackList default_port configFile timeout server_port
+
+default_port is the default port used to connect to processing nodes in case one or more of the hostnames don't have a port associated in the config file. 
+The second argument is the path to the config file containing hostnames and ports of the processing nodes, the timeout respresents how often the black list should be updated (in seconds), and the server port is the server on which the module listens for connections (from clients requesting the black list).

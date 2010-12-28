@@ -1,0 +1,68 @@
+>>> HOW TO INSTALL :
+
+Once you have unpacked Hadoop, put the content of this
+directory in <hadoop-dir>/src/core/apache/hadoop/fs/bsfs
+(directory bsfs must be created).
+
+Then create a directory <hadoop-dir>/src/core/blobseer
+and copy java interface to BlobSeer into it. The java
+interface to BlobSeer can be found in 
+<blobseer_dir>/trunk/bindings/java/blobseer.
+
+Run "ant" to build Hadoop. 
+
+Once Hadoop has been successfully build, put the Blobseer 
+libs (libblobseer.so and libblobseer-java.so) in 
+<hadoop-dir>/build/native/Linux-<arch>/
+
+The last step that needs to be performed is to configure Hadoop.
+Overwrite the core-site.xml file in <hadoop-dir>/conf with the
+one provided in this directory.
+
+>>> HOW TO START THE NAMENODE :
+
+The namenode is programmed in ruby, and is available
+in <hadoop-dir>/src/core/apache/hadoop/fs/bsfs/server
+First add the ruby binding (blobseer.rb and 
+libblobseer_ruby.so) in the server directory.
+To start the server, type
+ruby server.rb <bsfs port> <http port> <blobseer config> [<backup>
+example :
+ruby server.rb 9000 8080 test.cfg bckp.yml
+(The backup is a YAML file)
+If no backup file is given, the server will save its data
+in "backup.yml".
+
+
+>>> HOW TO USE :
+
+BSFS can be used like HDFS, with FsShell tools, such as typing
+bin/hadoop fs -ls /
+or
+bin/hadoop fs -mkdir /newdir
+
+
+>>> CURRENT LIMITATIONS AND TEST REQUIREMENT :
+
+For the moment the input and output streams only
+deal with aligned reads and appends. In case of writing,
+if the size of the file is not a multiple of the page
+size, the last bytes of the file (the bytes that are
+not aligned) will be lost.
+
+Sometimes the ruby namenode crash with "glibc double free
+or corruption" error, or some errors like that. I don't
+know if it's because of ruby, because of the current trunk
+version of blobseer,... anyway I think the best
+to do is to create a new namenode in Java, like
+in HDFS, with RPCs. That's what I plane to do when I'll come
+back.
+
+As you can see I've made a cache system for input/output,
+the cache size is a multiple of the page size, and you
+can configure it in core-site.xml. In that way we
+can test if parallelization of cache loading is
+useful, but for the moment I haven't made any test.
+Moreover, the file size must be a multiple of the
+cache size, not the page size, because there is
+now way to load less than the full cache.

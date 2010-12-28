@@ -1,0 +1,60 @@
+Written by Viet Trung Tran (ENS Cachan)
+
+Introduction
+============
+
+Gfarm2fs: file system interface for Gfarm/BlobSeer
+
+
+Advanced Features
+=================
+Supported versioning capability. User can access file versions via ioctl commands:
+
+ioctl(fd, BLOB_GET_LATEST_VERSION, &nversion);
+
+ioctl(fd, BLOB_SET_ACTIVE_VERSION, &nversion);
+
+ioctl(fd, BLOB_GET_ACTIVE_VERSION, &nversion);
+
+Examples
+========
+
+#include "gfioctl.h" //ioctl supported
+
+fd = open(argv[1], 0_RDWR);
+
+np = pwrite(fd, buffer_w, BUFFER_SIZE,0);
+ioctl(fd, BLOB_GET_LATEST_VERSION, &nversion);
+
+ioctl(fd, BLOB_SET_ACTIVE_VERSION, &nversion);
+np = pread(fd, buffer_r, BUFFER_SIZE,0);
+
+ioctl(fd, BLOB_GET_ACTIVE_VERSION, &nversion);
+close(fd);
+
+Warning
+=======
+Build Gfarm2fs under linux kernel 2.6.29 or later. Otherwise, there is no versioning support.
+
+Install
+=======
+
+CPPFLAGS='-I/usr/local/include -I$(Gfarm_includes) -I$(BlobSeer_includes)' LDFLAGS='-L/usr/local/lib -L$(Gfarm_libs) -L$(BlobSeer_libs) ' ./configure --prefix=$(Install_dir)
+
+User's guide
+============
++ mount the file system
+	gfarm2fs $(destination_dir)
++ umount the file system
+	sudo umount $(destination_dir)
+
+
+
+
+
+
+
+
+
+
+

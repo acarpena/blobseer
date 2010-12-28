@@ -1,0 +1,56 @@
+
+
+This package is developed to create a blacklist of clients that access BlobSeer in an illegal way. 
+It needs a running MonALISA repository that has the BSfilters.jar and BSmonitoring.jar libraries installed and is collecting data from a running BlobSeer system.
+
+There are 3 types of malicious operations: 
+	- writing to the providers without publishing the version to the version manager
+	- publishing to the version manager some writes that don't exist
+	- publishing to the version manager a different number of written pages than the one actually written on the providers.
+For each malicious operation, a clients blacklist can be created. This is don by the following classes that extend a generic BlackList class:
+	- feedback.userAccounting.maliciousClients.WriteNoPublish.java
+	- feedback.userAccounting.maliciousClients.PublishNoWrite.java
+	- feedback.userAccounting.maliciousClients.IncorrectWrites.java
+
+Using another generic class, MultipleBlackLists.java, a class that gathers information from multiple simple blacklists can be implemented. 
+Currently, a class that gathers clients that performed any of the 3 malicious operations is: 
+	- feedback.userAccounting.maliciousClients.MaliciousCLients.java
+	
+
+
+It is built using CMake.
+The configuration file used by CMake is called CMakeLists.txt.
+
+The default configuration provided in the CMakeLists.txt assumes the MonALISA repository is installed in the local home directory:
+                ~/MLrepository
+
+If the repository is installed somewhere else, the line that sets the value for REPOS_ROOT has to be modified accordingly.
+The path to JAVA_HOME has to be modified too (in the CMakeLists.txt file), in case the environment variable JAVA_HOME is not set and java is installed in a different directory than the default one (/usr).
+
+
+The Makefile can now be generated using the cmake command for unix makefiles:
+
+cmake -G "Unix Makefiles"
+
+
+Build the project:
+
+make
+
+
+The generated classes and libraries can be cleaned using:
+
+make clean
+
+
+
+The program can be run in the folowing way:
+cd $MALICIOUS_CLIENTS_ROOT/build
+
+export REPOS_ROOT=<the path to the MonALISA repository>
+
+export CLASSPATH=$REPOS_ROOT/tomcat/common/lib/BSMonitoring.jar:$REPOS_ROOT/lib/JStoreClient.jar:$REPOS_ROOT/lib/backport-util-concurrent.jar:.
+
+java feedback/userAccounting/MaliciousClientsFeedback <port_number>
+
+

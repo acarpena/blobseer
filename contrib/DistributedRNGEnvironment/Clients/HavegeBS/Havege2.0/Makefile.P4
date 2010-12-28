@@ -1,0 +1,43 @@
+# See Copyright in file Copyright.h
+# Advertisement: changing the compiler and the compiler options would
+# necessitate to recalibrate the unrolling factors in the three
+# different while loops in HAVEGE
+
+LIB= -lm -mno-cygwin 
+#LIB=  -lm -DCYGWIN   cephes.c matrix.c dfft.c special-functions.c 
+#if you want to execute in a CygWin environment set the LIB variable to 
+#this value 
+
+
+#Arch=ATHLON
+#Arch=PIII
+Arch=P4
+CC=gcc
+CCOPT= -O3 ${LIB} -DWIN -DNVC
+all${Arch}: HAVEGEND${Arch}.exe HAVEGECRYPTOND${Arch}.exe HAVEGESPEED${Arch}.exe
+
+allINLINE${Arch}: HAVEGESPEEDINLINE${Arch}.exe
+
+
+HAVEGEND${Arch}.exe:  HAVEGE2.0${Arch}W.o HardClockWin.s   HardTick.c mainnd.c PackTest.c cephes.c matrix.c dfft.c special-functions.c   
+	${CC} ${CCOPT} HAVEGE2.0${Arch}W.o -D${Arch}    HardClockWin.s   HardTick.c mainnd.c PackTest.c cephes.c matrix.c dfft.c special-functions.c      -o HAVEGEND${Arch}.exe
+
+HAVEGECRYPTOND${Arch}.exe:  HAVEGE2.0${Arch}W.o HardClockWin.s   HardTick.c maincryptond.c PackTest.c cephes.c matrix.c dfft.c special-functions.c   
+	${CC} ${CCOPT} HAVEGE2.0${Arch}W.o -D${Arch}    HardClockWin.s   HardTick.c maincryptond.c PackTest.c cephes.c matrix.c dfft.c special-functions.c      -o HAVEGECRYPTOND${Arch}.exe
+
+HAVEGE2.0${Arch}W.o: HAVEGE2.0.c PersoArchHAVEGE2.0.h LoopBody.h  OneIteration.h
+	${CC} -c ${CCOPT} HAVEGE2.0.c  -D${Arch} 
+	mv HAVEGE2.0.o  HAVEGE2.0${Arch}W.o
+
+HAVEGE2.0inline${Arch}W.o: HAVEGE2.0.c PersoArchHAVEGE2.0.h LoopBody.h  OneIteration.h HavegeInline.h
+	${CC} -c ${CCOPT} -DNDINLINE  HAVEGE2.0.c  -D${Arch}
+	mv HAVEGE2.0.o  HAVEGE2.0inline${Arch}W.o
+
+HAVEGESPEED${Arch}.exe:   HAVEGE2.0${Arch}W.o HardClockWin.s   HardTick.c mainspeed.c 
+	${CC} ${CCOPT} HAVEGE2.0${Arch}W.o -D${Arch}    HardClockWin.s   HardTick.c mainspeed.c   -o HAVEGESPEED${Arch}.exe
+
+HAVEGESPEEDINLINE${Arch}.exe:   HAVEGE2.0inline${Arch}W.o HardClockWin.s   HardTick.c mainspeed.c
+	${CC} ${CCOPT} -DNDINLINE HAVEGE2.0inline${Arch}W.o  -D${Arch}    HardClockWin.s   HardTick.c mainspeed.c   -o HAVEGESPEEDINLINE${Arch}.exe
+
+
+

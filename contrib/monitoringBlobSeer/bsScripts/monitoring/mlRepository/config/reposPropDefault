@@ -1,0 +1,81 @@
+######################## LUS Configuration ##############################
+lia.Monitor.debug = false
+
+#  Place your LUSs and your Farm group here
+#  Separate multiple values by ","
+lia.Monitor.LUSs = monalisa.cern.ch,monalisa.cacr.caltech.edu
+
+# REPLACE THIS WITH YOUR OWN GROUP !!!
+# You can gather data from several groups by providing a comma-separated
+# list of group names. Take care, the names are case-sensitive.
+lia.Monitor.group = BlobMonitor
+
+#########################################################################
+
+################## Publish repository statistics ########################
+# Export repository statistics to a list of services that is contained in
+# the file at this address
+
+lia.Repository.ApMonExport.ConfigFile=http://monalisa.caltech.edu/repository.conf
+#########################################################################
+
+
+##################### Store Client configuration follows ################
+lia.Monitor.JStore.storeLocalTime=true
+
+##default config
+##  Global parameters to be stored
+lia.Monitor.JiniClient.Store.global_params=Load5,CPU_USR,eth0_IN,eth0_OUT,mem_used
+
+##  Predicates to register with
+##  Separate multiple predicated by ","
+##  One predicate can look like:
+##  Farm/Cluster/Node/start_time/end_time/function_list
+##  Function list contains function names separated by "|"
+lia.Monitor.JiniClient.Store.predicates=*/Blob_IO/*/-1/-1/*,*/VManager/*/-1/-1/*,*/ApMon_SysMon/*/-1/-1/mem_used|cpu_usr|eth0_in|eth0_out
+
+
+########################### Logging options #############################
+#logging options
+handlers= java.util.logging.ConsoleHandler
+#.level=FINEST
+.level = INFO
+java.util.logging.ConsoleHandler.level = INFO
+java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+#########################################################################
+  
+################ Store configuration ####################################
+lia.Monitor.readonly.store = false
+
+lia.Monitor.Store.TransparentStoreFast.web_writes = 3
+
+# Mediated data, 1 sample each minute
+lia.Monitor.Store.TransparentStoreFast.writer_0.total_time=31536000
+lia.Monitor.Store.TransparentStoreFast.writer_0.samples=525600
+lia.Monitor.Store.TransparentStoreFast.writer_0.table_name=monitor_1y_1min
+lia.Monitor.Store.TransparentStoreFast.writer_0.descr=1y 1min
+lia.Monitor.Store.TransparentStoreFast.writer_0.writemode=7
+  
+# Mediated data, 1 sample each 100 minutes
+lia.Monitor.Store.TransparentStoreFast.writer_1.total_time=31536000
+lia.Monitor.Store.TransparentStoreFast.writer_1.samples=5256
+lia.Monitor.Store.TransparentStoreFast.writer_1.table_name=monitor_1y_100min  
+lia.Monitor.Store.TransparentStoreFast.writer_1.descr=1y 100min
+lia.Monitor.Store.TransparentStoreFast.writer_1.writemode=7
+
+# Generic object storage. The value is a serialized form of the Java object that is received.
+# You can retrieve this data through the WebSerices interface.
+lia.Monitor.Store.TransparentStoreFast.writer_2.total_time=604800
+lia.Monitor.Store.TransparentStoreFast.writer_2.table_name=monitor_1w_obj
+lia.Monitor.Store.TransparentStoreFast.writer_2.descr=1week obj
+lia.Monitor.Store.TransparentStoreFast.writer_2.writemode=2
+
+
+
+#########################################################################
+######################Filters
+#lia.Monitor.JiniClient.Store.dynamic_filters=filters.myFilter
+lia.Monitor.JiniClient.Store.dynamic_filters=mon.filters.BSFilter
+
+
+

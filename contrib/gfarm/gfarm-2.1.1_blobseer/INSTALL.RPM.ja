@@ -1,0 +1,68 @@
+[This is written in Japanese,
+ please look at INSTALL.RPM.en for English version.]
+
+		 Gfarm ファイルシステム導入マニュアル
+
+● 本ドキュメントについて
+=========================
+
+本ドキュメントは RPM パッケージによる Gfarm ファイルシステムの導入に
+関して記述したものです．
+
+● 概要
+=================================
+
+Gfarm ファイルシステムの導入にあたり，メタデータサーバ，ファイルシステ
+ムノード，クライアントノードに必要なパッケージをインストールします．
+
+以下では，それぞれ異なるホストとして説明していますが，同一のホストに全
+てをインストールすることもできます．
+
+● メタデータサーバのインストール
+=================================
+
+メタデータサーバ用の RPM パッケージをインストールします．
+
+	# rpm -Uvh gfarm-server-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm
+
+（注）上記では gfarm-* という RPM パッケージをインストールしていま
+      すが，GSI 認証が含まれるパッケージの場合はパッケージ名が 
+      gfarm-gsi-* となります．
+
+● ファイルシステムノード（かつクライアントノード）のインストール
+=================================================================
+
+ファイルシステムノード用の RPM パッケージをインストールします．
+
+	# rpm -Uvh gfarm-fsnode-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
+
+Gfarm では，ファイルシステムノードは通常クライアントにもなりますので，
+client パッケージもインストールします．doc パッケージは任意です．
+
+さらに，クライアントとして，GfarmFS-FUSE (gfarm2fs)を利用し，Gfarm ファ
+イルシステムを mount する場合，gfarm2fs パッケージのインストールも必要
+です．
+
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
+
+● クライアントノードのインストール
+===================================
+
+ファイルシステムノード用の RPM パッケージをインストールします．
+
+	# rpm -Uvh gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
+
+doc パッケージは任意です．
+
+GfarmFS-FUSEを利用し，Gfarm ファイルシステムを mount する場合，
+gfarm2fs パッケージのインストールも必要です．
+
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
+
+$Id: INSTALL.RPM.ja 3857 2007-11-05 06:13:22Z tatebe $

@@ -1,0 +1,37 @@
+This is a testing proxy for transferring the data from the user accounting module to blobseer.
+The data transferred could a backlist of malicious clients.
+The user accounting module is still under development now (21 July) so this proxy is not tested.
+However, you can try this proxy by setting up two servers mocking the user accounting module as well as blobseer rpc module.
+
+
+<<User accounting module >>
+javac repServer.java
+java repServer
+
+If everything is ok, you should see the message "Server Socket bound!"
+
+
+
+<<Blobseer rpc server and proxy>>
+cmake -G "Unix Makefiles"
+make
+
+After successfully compiled, launch the blobseer rpc server by:
+proxy/server
+You should see the message "listening".
+
+
+Now we can test the proxy. The proxy actually does a very simple thing.
+It prompts your to input one operator of the four: +, -, *, /.
+It reads your input and sends it to the repServer which mocks the user accounting module.
+The repServer has two internal number 6 and 2. repServer calculates the result according to the received operator.
+Then it sends back the result to the proxy after calculation and the proxy forwards the result to the blobseer rpc server which finally displays the result.
+
+
+
+
+
+
+
+
+

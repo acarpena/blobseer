@@ -1,0 +1,7 @@
+// Configuration file for BlobSeer Security Policies Generation
+// last issued policy number
+policyDir=/Users/acarpena/Work/blobseer/contrib/monitoringBlobSeer/PolicyMatching/generatedPolicies/policyDir/
+serDir=/Users/acarpena/Work/blobseer/contrib/monitoringBlobSeer/PolicyMatching/generatedPolicies/serDir/
+windowSize=50
+// lasati-o ultima!!
+lastPolicyNum=58

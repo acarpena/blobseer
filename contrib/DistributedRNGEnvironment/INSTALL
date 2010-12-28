@@ -1,0 +1,16 @@
+Steps to follow to install a working environment
+
+ * Install BlobSeer and it's dependencies (see http://blobseer.gforge.inria.fr/doku.php?id=tutorial:main)
+   (BlobSeer should be placed into Softwares/ and I suggest you to place in this directory source code directories
+   of BlobSeer dependencies, and install the dependencies in ~/deploy as suggest on the wiki)
+ * Install client dependencies:
+   - havegeBS: HAVEGE 2.0 (see README)
+   - egdBS: install egd (http://egd.sourceforge.net/) into Softwares (i.e. decompress it in a new directory in Softwares/)
+   - randomBS: no extra dependencies
+ * Compile each needed client:
+   - edit CMakeLists.txt
+   $ cmake -G "Unix Makefiles"
+   $ make
+ * To compile tools (in each subdirectory):
+   $ cmake -G "Unix Makefiles"
+   $ make

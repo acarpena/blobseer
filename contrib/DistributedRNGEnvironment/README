@@ -1,0 +1,166 @@
+havgeBS Distribution to deploy a Distributed Random Number Generator on Grid5000
+(www.grid5000.fr)
+Author: Benjamin Girault <benjamin dot girault [at] dptinfo dot ens-cachan.fr>
+
+
+HAVEGE 2.0
+==========
+Author: André Seznec, Nicolas Sendrier
+Original Version web page: http://www.irisa.fr/caps/projects/hipsor/old/HAVEGE.html
+Modified By: Benjamin Girault <benjamin dot girault [at] dptinfo dot ens-cachan.fr>
+Archive directory: Clients/HavegeBS/Havege2.0
+
+Modifications
+-------------
+
+ * Compilation with CMake (only for Core2 / Xeon architectures)
+ * HAVEGE2.0.h : C++ header
+ * New Architecture: Core2 / Xeon (Not all Xeon, only those with a L1 Cache of 64 kB)
+ * PersoArchHAVEGE2.0.h : Core2 architecture added (copied from P4 architecture: see TODO)
+ * LoopBody.h : Core2 architecture added next to Athlon (same L1 Cache size)
+ * CCOPTCORE2 : added (copied from CCOPTP4)
+ * HardClockCORE2.s : Core2 HardClock function (register change from %ebp/%esp to %rbp/%rsp
+     and function change from pushl/movl to pushq/movq due to 64 bits architecture) created
+     by modification to a copy of HardClockP4.s
+
+Compilation
+-----------
+
+With CMake
+..........
+
+ $ cmake -G "Unix Makefiles"
+ $ make
+
+Note that once the first command is executed, compiling HAVEGE with the original Makefile
+is not available anymore.
+
+With the original Makefile
+..........................
+
+ $ make
+ $ ln -sf HAVEGE2.0CORE2.o libhavege2.so
+
+
+scripts/ directory
+==================
+
+Author: Bogdan Nicolae
+
+
+tests/ directory
+================
+
+Contains some scripts to deploy a distributed evaluation of the seed.
+
+The general idea is to split the file into small chunks, each one will be tested by a
+separate instance of the NIST Statistical Test Suite. It will 
+
+sts-bgirault.tar.gz is based on sts-2.0b.zip (from
+http://csrc.nist.gov/groups/ST/toolkit/rng/documentation_software.html)
+A working executable for the grid, and a script run-test.sh have been added.
+
+Note that these scripts desactivate the FFT test since the NIST web site advises
+to disregard the results of this test.
+
+analysis/ subdirectory
+----------------------
+
+Each script must be executed in the tests/ directory
+
+ * analyze-each-test.sh : Prints the total number of failure for each test
+ * analyze-results.sh : Prints for each sequence the number of failures
+ * get-failed-tests.sh <threshold> : same as the previous script except that
+     if the number of failures is greater than <threshold>, it will also
+     print the tests which didn't pass
+ * get_nb_errors.sh <result_file> <nb_max_errors> : get for each number of errors
+     between 0 and <nb_max_errors> the number of sequences which have exactly this
+     number of errors (result_file is in the format of the output of
+     analyze-results.sh).
+ * get-successive-non-null-number-of-failures.sh : for each sequences which has
+     no error, prints the number of successive sequences with non null number of
+     failure right before it
+
+Note that the results produced by analyze-results.sh contains some errors which are
+not: if a sequence has too few cycles for the RandomExcursion/RandomExcursionVariant
+tests, pvalues will be 0.000000. Those errors should be discarded.
+
+
+Tools/ directory
+================
+
+StsCompare
+----------
+
+A small program to compare different results from the NIST Test Suite.
+
+Each run of the NIST Test Suite must have exactly the same tests performed.
+You can either display statistics with percentage of success or with number
+of successes (add -p at the end of the command line to have percentages displayed).
+From 2 to as many as you want results can be compared (went 2 results are compared
+specifying the number of results isn't necessary (-n) but you won't be able to
+use -p)
+
+Usage: stsCompare [-n <nb_finalAnalysisReports> <report1> <report2> ... | <report1> <report2>] [-p]
+
+RandomBoost
+-----------
+
+Another small program to generate random data from the mt19937 (Mersenne Twister variant)
+RNG of the Boost distribution.
+
+Data is written into mt19937-seed.bin.
+
+Usage: randomBoost [<number_of_characters>]
+
+
+Deployment
+==========
+
+Distributed RNG
+---------------
+
+ - edit <client_name>-deployment.sh header
+ $ <client_name>-deployment.sh 
+
+NIST Tests
+----------
+
+ - make a reservation
+ - connect to that reservation
+ - move to tests directory
+ $ cd tests/
+ - move to chunks directory
+ $ cd chunks/
+ - split your original dump file into piece the size of a multiple of 16MB (example for 13 sequences)
+     (chunks will be named xYY, where YY is two characters):
+ $ split -b 218103808 <dump_file> 
+ - go back to tests:
+ $ cd ../
+ - create a file with all the client nodes (on a node of the reservation):
+ $ cat $OAR_FILE_NODES | uniq > clients
+ - run the deployment:
+ $ ./deploy_tests.sh clients <nb_instances_per_node> <nb_sequences_per_chunk>
+ - close the reservation
+
+ - remove all chunks (from the tests/ directory):
+ $ rm */x*
+ - move all NIST Tests directories to tests/
+ $ mv */sts-* .
+ - remove useless directories (this command will fail if the directory is empty, so don't worry):
+ $ rmdir *
+ - now you can proceed to result analysis
+
+
+New Client
+==========
+
+Some steps to follow in order to write a new client:
+
+ * copy one of the <client_name>-deployment.sh in the same directory and modify it to
+     be able to run the new client
+ * create the client directory in Clients/
+ * copy the files CMakeLists.txt from Clients/RandomBS to your client directory and modify
+     the last two lines
+ * copy deploy_clients.sh start_client.sh from Clients/RandomBS to your client
+     directory and modify them

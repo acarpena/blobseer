@@ -1,0 +1,3 @@
+This directory contains a version of CM1+SBS+HDF5 with makefiles
+configured to run with IBM's tools like xlc, xlf, mpcc and mplf.
+Also library paths are configured according to BluePrint libraries.

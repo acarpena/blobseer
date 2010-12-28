@@ -1,0 +1,167 @@
+
+
+FBlobSeer - Namespace Manager for BlobSeer - setup guide
+
+
+This project is composed of 2 distinct parts:
+1. The namespace manager server - it stores the directory tree and the mapping between blobs and files.
+2. The client library which enables a file-oriented access to BlobSeer. The project builds two shared libraries in the lib/ folder: a C++ library (libfbs_namespace) and a C library (libfbs_namespace-c)
+
+
+Dependencies:
+
+The namespace manager has the following external dependencies:
+
+ 1. BlobSeer - release 0.3.3;
+ 
+ 
+How to install BlobSeer
+
+A tutorial on how to build BlobSeer and to install its dependencies can be found here:
+http://blobseer.gforge.inria.fr/doku.php?id=tutorial:main
+  
+
+
+######################################
+How to build the Namespace manager:
+######################################
+
+Just like BlobSeer, the Namespace manager is built using CMake.
+The configuration file used by CMake is called CMakeLists.txt.
+
+This tutorial assumes the libraries (Boost, Libconfig) are installed in the following directory:
+                ~/deploy
+
+If any of the libraries was manually installed in a different directory, its path has to be specified in the configuration file (CMakeLists.txt).
+
+The following paths can also be set in the configuration file (CMakeLists.txt), if they are different from the default paths:
+- EXTERNAL_ROOT -> the root prefix for the BlobSeer dependencies
+                -> default value: ~/deploy
+- BLOBSEER_SOURCE_DIR 
+		-> the root prefix the BlobSeer release used
+                -> default value: ~/Work/blobseer/tags/release-0.3.3
+
+
+#########
+Settings for the JAVA bindings for the Namespace client:
+#########
+
+The JAVA client has the following external dependencies:
+1. The JNI headers have to be installed into the system
+2. Java JDK 6 
+
+To build the JAVA bindings, some changes have to be done in the CMakeLists.txt file:
+- set the path to JAVA_HOME, if it is not set as an environment variable
+- uncomment the line that adds the bindings directory to the build paths:
+		add_subdirectory (FBlobseerClient/bindings/java)
+
+
+#########
+Settings for the Python bindings for the Namespace client:
+#########
+
+The Python client has the following external dependencies:
+1. The Boost.Python library has to be installed into the system
+	- Install Boost with the --with-libraries=python option. 
+
+To build the Python bindings, some changes have to be done in the CMakeLists.txt file:
+- uncomment the line that adds the bindings directory to the build paths:
+		add_subdirectory (FBlobseerClient/bindings/python)
+
+
+
+#########
+Build the Namespace Manager
+#########
+
+The Makefiles can now be generated using the cmake command for unix makefiles:
+
+cmake -G "Unix Makefiles"
+
+
+Build the project:
+
+make
+
+The /test folder will have linking errors, as it needs to link against the client libraries which don't exist at the time the Makefiles are created.
+To build everything correctly, run again (the libraries can be found now in the lib/ folder):
+	cmake -G "Unix Makefiles"
+	make
+
+
+
+
+######################################
+How to run the Namespace Manager:
+######################################
+
+In order to run FBlobSeer(BlobSeer + Namespace Manager server), a configuration file has to be supplied to each entity.
+A simple configuration file for deployment on the localhost can be found in the conf/ folder.
+It is a normal BlobSeer configuration file with additional settings for the namespace manager:
+
+# Namespace Manager settings
+NamespaceServer: {
+    host = "127.0.0.1";
+    port = "15000";
+};
+
+
+Before executing any of the BlobSeer entities, the LD_LIBRARY_PATH  (DYLD_LIBRARY_PATH for MacOS) environment variable has to be set to point to the needed libraries: Boost, Libconfig. The following command assumes that all the libraries are installed in the "~/deploy" directory.
+
+export LD_LIBRARY_PATH=~/deploy/lib/
+
+
+Start the namespace manager server:
+
+cd $FBLOBSEER_HOME
+./namespaceMan/NamespaceManager conf/blobseer-test.cfg 
+
+
+Test the client libraries using the test programs provided in the test/ folder:
+- for the cpp library:
+	./test/testFBlobseer conf/blobseer-test.cfg
+
+-for the c library
+	./test/testFBlobseerC conf/blobseer-test.cfg
+
+
+
+######################################
+How to run the JAVA client:
+######################################
+
+Before executing any of the BlobSeer entities, the LD_LIBRARY_PATH  (DYLD_LIBRARY_PATH for MacOS) environment variable has to be set to point to the needed libraries: Boost, Libconfig, but also the JNI bindings library, created into the FBlobseerClient/bindings/java folder. 
+
+export LD_LIBRARY_PATH=~/deploy/lib/:${FBLOBSEER_HOME}/FBlobseerClient/bindings/java
+
+The CLASSPATH variable has to be set to point to the same folder, where the java classes are implemented (in the fblobseer package):
+
+export CLASSPATH=${FBLOBSEER_HOME}/FBlobseerClient/bindings/java
+
+
+Test the client libraries using the test programs provided in the test/ folder:
+
+java -cp $CLASSPATH:test/ Test ${FBLOBSEER_HOME}/conf/blobseer-test.cfg
+
+
+
+
+######################################
+How to run the Python client:
+######################################
+
+Before using the Python bindings, first export the path to the fblobseer.so library:
+
+export PYTHONPATH=$NAMESPACE_MANAGER_HOME/FBlobseerClient/bindings/python
+
+(this is the default path where the library is built)
+
+
+The fblobseer module can now be imported into a Python script:
+
+import fblobseer
+from fblobseer import *
+
+
+
+

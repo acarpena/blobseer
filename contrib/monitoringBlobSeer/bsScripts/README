@@ -1,0 +1,67 @@
+
+
+###############################
+The scripts are stored into folders corresponding to the tasks fulfilled:
+
+blobseer - contains the script for configuring and deploying BlobSeer
+logging-server - contains the scripts for configuring and running a logging server which gathers the logs from all the blobseer clients
+monitoring - contains the scripts that enable the blobseer monitoring support and the deployment scripts for the monalisa services
+
+globalEnv - contains the script that exports some global variables (e.g. BLOBSEER_HOME)
+conf - contains the configuration files used during the deployment
+launchDepl - contains the global scripts that configure and deploy all the components
+
+
+###############################
+How to deploy BlobSeer
+###############################
+
+If Grid5000 is not used, a file containing all the hostnames (or IPs) for the machines available for BlobSeer has to be provided.
+Its path can be specified in the BlobSeer env.sh file (MACHINES_FILE).
+The file has to contain at least 3 lines (which can be identical) for the machines that will be used for the version manager, provider manager and the logging server. The machines corresponding to the next lines, will be used for metadata and data providers. 
+E.g. For deployment on the local host for 1 entity of each type, the file must contain 5 lines with "localhost"
+
+The configuration phase:
+- set the global variables in the globalEnv/env.sh file (check the README file in the globalEnv folder)
+- set the environment variables associated with BlobSeer in the blobseer/config/env.sh file  (check the README file in the blobseer folder)
+- select the entities that need to be deployed in the launchDepl/deployEntities.sh file
+
+
+
+###############################
+How to deploy other components (e.g. The logging server, the BlobSeer monitoring support)
+###############################
+- for specific information related to each component, check the README file in the component's folder.
+
+The configuration phase:
+- set the environment variables associated with the component in its associated folder: $COMPONENT_HOME/config/env.sh file
+- set to true the variable associated with the component in the launchDepl/deployEntities.sh file
+
+
+###############################
+The deployment phase (which is executed after the configuration phase of all the needed components):
+###############################
+- run the script:
+	launchDepl/configAll.sh
+	- this will make all the configurations related to the selected entities.
+-run the deployment script:
+	launchDepl/deployAll.sh
+	- this script will deploy all the selected entities.
+
+
+###############################
+How to deploy BlobSeer clients:
+###############################
+- in the tests folder, different types of tests can be found in their respective folders
+- choose the needed test and modify the run parameters of the test according to your needs
+
+
+
+
+
+
+
+
+
+
+

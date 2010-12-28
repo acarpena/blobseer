@@ -1,0 +1,39 @@
+<project name="Server">
+
+  <!-- set global properties for this build -->
+  <property name="HADOOP_HOME" location="/home/dmoise/work/hadoop-yahoo"/>
+  <property name="SERVER_HOME" location="${HADOOP_HOME}/blobseer-fsmeta"/>
+  <property name="src" location="${SERVER_HOME}/src/"/>
+  <property name="build" location="${SERVER_HOME}/build/"/>
+  
+  <path id="project.classpath">
+	<pathelement location="${HADOOP_HOME}/build/classes"/>
+	<pathelement location="${build}"/>
+  </path>
+
+  <target name="init">
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="build" depends="init">
+    <javac
+      srcdir="${src}"
+      destdir="${build}"
+      >
+      <classpath refid="project.classpath"/>
+  <!--    <compilerarg value="-Xlint"/>  -->
+    </javac>
+  </target>
+  
+  <target name="run">
+      <java classname="NManager">
+      <classpath refid="project.classpath"/>
+      <arg line="9000 /tmp/blobseer.cfg"/>
+      </java>
+  </target>
+
+  <target name="clean" depends="init">
+      <delete dir="${build}"/>
+  </target>
+  
+</project>

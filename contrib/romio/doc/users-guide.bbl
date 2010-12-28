@@ -1,0 +1,41 @@
+\begin{thebibliography}{1}
+
+\bibitem{bordawekar:primitives}
+Rajesh Bordawekar, Juan~Miguel {del Rosario}, and Alok Choudhary.
+\newblock Design and evaluation of primitives for parallel {I/O}.
+\newblock In {\em Proceedings of Supercomputing '93}, pages 452--461, Portland,
+  OR, 1993. IEEE Computer Society Press.
+
+\bibitem{choudhary:passion}
+Alok Choudhary, Rajesh Bordawekar, Michael Harry, Rakesh Krishnaiyer, Ravi
+  Ponnusamy, Tarvinder Singh, and Rajeev Thakur.
+\newblock {PASSION:} parallel and scalable software for input-output.
+\newblock Technical Report SCCS-636, ECE Dept., NPAC and CASE Center, Syracuse
+  University, September 1994.
+
+\bibitem{grop99a}
+William Gropp, Ewing Lusk, and Rajeev Thakur.
+\newblock {\em {Using MPI-2: Advanced Features of the Message-Passing
+  Interface}}.
+\newblock MIT Press, Cambridge, MA, 1999.
+
+\bibitem{mpi97a}
+{Message Passing Interface Forum}.
+\newblock {{MPI-2}: Extensions to the Message-Passing Interface}, July 1997.
+\newblock {\tt http://www.mpi-forum.org/docs/docs.html}.
+
+\bibitem{thak96e}
+Rajeev Thakur, William Gropp, and Ewing Lusk.
+\newblock An abstract-device interface for implementing portable parallel-{I/O}
+  interfaces.
+\newblock In {\em Proceedings of the 6th Symposium on the Frontiers of
+  Massively Parallel Computation}, pages 180--187. IEEE Computer Society Press,
+  October 1996.
+
+\bibitem{thak99b}
+Rajeev Thakur, William Gropp, and Ewing Lusk.
+\newblock On implementing {MPI-IO} portably and with high performance.
+\newblock In {\em Proceedings of the 6th Workshop on I/O in Parallel and
+  Distributed Systems}, pages 23--32. ACM Press, May 1999.
+
+\end{thebibliography}

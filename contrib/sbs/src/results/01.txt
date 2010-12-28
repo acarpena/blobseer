@@ -1,0 +1,250 @@
+1: [time] 0.000000 : requesting size 78
+1: [time] 0.008193 : size request accepted
+0: time	:	0
+0: [time] 0.000000 : in realign, offset is 78, read until 78
+0: [time] 0.000829 : reached realignement
+1: [time] 1.016981 : requesting size 78
+1: [time] 1.017184 : size request accepted
+0: time	:	0
+0: [time] 0.996227 : in realign, offset is 78, read until 78
+0: [time] 0.996268 : reached realignement
+1: [time] 2.019229 : requesting size 78
+1: [time] 2.019272 : size request accepted
+0: time	:	0
+0: [time] 1.996448 : in realign, offset is 78, read until 78
+0: [time] 1.996485 : reached realignement
+1: [time] 3.020353 : requesting size 78
+1: [time] 3.020554 : size request accepted
+0: time	:	0
+0: [time] 3.002455 : in realign, offset is 78, read until 78
+0: [time] 3.002500 : reached realignement
+1: [time] 4.028980 : requesting size 78
+1: [time] 4.029106 : size request accepted
+0: time	:	0
+0: [time] 4.010797 : in realign, offset is 78, read until 78
+0: [time] 4.010844 : reached realignement
+1: [time] 5.030148 : requesting size 78
+1: [time] 5.030190 : size request accepted
+0: time	:	0
+0: [time] 5.006662 : in realign, offset is 78, read until 78
+0: [time] 5.006705 : reached realignement
+1: [time] 6.031542 : requesting size 78
+1: [time] 6.031617 : size request accepted
+0: time	:	0
+0: [time] 6.008596 : in realign, offset is 78, read until 78
+0: [time] 6.008636 : reached realignement
+1: [time] 7.033614 : requesting size 78
+1: [time] 7.033786 : size request accepted
+0: time	:	0
+0: [time] 7.017373 : in realign, offset is 78, read until 78
+0: [time] 7.017453 : reached realignement
+1: [time] 8.038420 : requesting size 78
+1: [time] 8.039131 : size request accepted
+0: time	:	0
+0: [time] 8.025876 : in realign, offset is 78, read until 78
+0: [time] 8.026011 : reached realignement
+1: [time] 9.046534 : requesting size 78
+1: [time] 9.046655 : size request accepted
+0: time	:	0
+0: [time] 9.025460 : in realign, offset is 78, read until 78
+0: [time] 9.025524 : reached realignement
+1: [time] 15.058785 : requesting size 78
+1: [time] 15.059483 : size request accepted
+0: time	:	0
+0: [time] 15.043197 : in realign, offset is 78, read until 78
+0: [time] 15.043264 : reached realignement
+1: [time] 16.064659 : requesting size 78
+1: [time] 16.064765 : size request accepted
+0: time	:	0
+0: [time] 16.043606 : in realign, offset is 78, read until 78
+0: [time] 16.043657 : reached realignement
+1: [time] 17.067157 : requesting size 78
+1: [time] 17.067260 : size request accepted
+0: time	:	0
+0: [time] 17.045746 : in realign, offset is 78, read until 78
+0: [time] 17.045790 : reached realignement
+1: [time] 18.068919 : requesting size 78
+1: [time] 18.069040 : size request accepted
+0: time	:	0
+0: [time] 18.045815 : in realign, offset is 78, read until 78
+0: [time] 18.045853 : reached realignement
+1: [time] 19.070409 : requesting size 78
+1: [time] 19.070496 : size request accepted
+0: time	:	0
+0: [time] 19.047963 : in realign, offset is 78, read until 78
+0: [time] 19.048008 : reached realignement
+1: [time] 20.073970 : requesting size 78
+1: [time] 20.074103 : size request accepted
+0: time	:	0
+0: [time] 20.053240 : in realign, offset is 78, read until 78
+0: [time] 20.053283 : reached realignement
+1: [time] 21.079263 : requesting size 78
+1: [time] 21.079376 : size request accepted
+0: time	:	0
+0: [time] 21.058367 : in realign, offset is 78, read until 78
+0: [time] 21.058407 : reached realignement
+1: [time] 22.082251 : requesting size 78
+1: [time] 22.082410 : size request accepted
+0: time	:	0
+0: [time] 22.061761 : in realign, offset is 78, read until 78
+0: [time] 22.061811 : reached realignement
+1: [time] 23.084342 : requesting size 78
+1: [time] 23.084342 : size request accepted
+0: time	:	0
+0: [time] 23.060857 : in realign, offset is 78, read until 78
+0: [time] 23.060905 : reached realignement
+1: [time] 24.086122 : requesting size 78
+1: [time] 24.086269 : size request accepted
+0: time	:	0
+0: [time] 24.064724 : in realign, offset is 78, read until 78
+0: [time] 24.064769 : reached realignement
+1: [time] 30.089333 : requesting size 78
+1: [time] 30.089455 : size request accepted
+0: time	:	0
+0: [time] 30.066778 : in realign, offset is 78, read until 78
+0: [time] 30.066828 : reached realignement
+1: [time] 31.092983 : requesting size 78
+1: [time] 31.093041 : size request accepted
+0: time	:	0
+0: [time] 31.069945 : in realign, offset is 78, read until 78
+0: [time] 31.069982 : reached realignement
+1: [time] 32.095832 : requesting size 78
+1: [time] 32.095958 : size request accepted
+0: time	:	0
+0: [time] 32.075807 : in realign, offset is 78, read until 78
+0: [time] 32.075863 : reached realignement
+1: [time] 33.097696 : requesting size 78
+1: [time] 33.097829 : size request accepted
+0: time	:	0
+0: [time] 33.076250 : in realign, offset is 78, read until 78
+0: [time] 33.076289 : reached realignement
+1: [time] 34.099634 : requesting size 78
+1: [time] 34.099715 : size request accepted
+0: time	:	0
+0: [time] 34.078451 : in realign, offset is 78, read until 78
+0: [time] 34.078491 : reached realignement
+1: [time] 35.100908 : requesting size 78
+1: [time] 35.101016 : size request accepted
+0: time	:	0
+0: [time] 35.077734 : in realign, offset is 78, read until 78
+0: [time] 35.077778 : reached realignement
+1: [time] 36.102793 : requesting size 78
+1: [time] 36.102840 : size request accepted
+0: time	:	0
+0: [time] 36.080879 : in realign, offset is 78, read until 78
+0: [time] 36.080928 : reached realignement
+1: [time] 37.104404 : requesting size 78
+1: [time] 37.104499 : size request accepted
+0: time	:	0
+0: [time] 37.085419 : in realign, offset is 78, read until 78
+0: [time] 37.085745 : reached realignement
+1: [time] 38.105796 : requesting size 78
+1: [time] 38.105886 : size request accepted
+0: time	:	0
+0: [time] 38.083521 : in realign, offset is 78, read until 78
+0: [time] 38.083572 : reached realignement
+1: [time] 39.108401 : requesting size 78
+1: [time] 39.108500 : size request accepted
+0: time	:	0
+0: [time] 39.089983 : in realign, offset is 78, read until 78
+0: [time] 39.090034 : reached realignement
+1: [time] 45.112237 : requesting size 78
+1: [time] 45.112340 : size request accepted
+0: time	:	0
+0: [time] 45.092253 : in realign, offset is 78, read until 78
+0: [time] 45.092308 : reached realignement
+1: [time] 46.113846 : requesting size 78
+1: [time] 46.113951 : size request accepted
+0: time	:	0
+0: [time] 46.090965 : in realign, offset is 78, read until 78
+0: [time] 46.091004 : reached realignement
+1: [time] 47.119730 : requesting size 78
+1: [time] 47.119852 : size request accepted
+0: time	:	0
+0: [time] 47.101205 : in realign, offset is 78, read until 78
+0: [time] 47.101257 : reached realignement
+1: [time] 48.121143 : requesting size 78
+1: [time] 48.121143 : size request accepted
+0: time	:	0
+0: [time] 48.098894 : in realign, offset is 78, read until 78
+0: [time] 48.098939 : reached realignement
+1: [time] 49.121926 : requesting size 78
+1: [time] 49.122028 : size request accepted
+0: time	:	0
+0: [time] 49.099260 : in realign, offset is 78, read until 78
+0: [time] 49.099305 : reached realignement
+1: [time] 50.124591 : requesting size 78
+1: [time] 50.124638 : size request accepted
+0: time	:	0
+0: [time] 50.103044 : in realign, offset is 78, read until 78
+0: [time] 50.103122 : reached realignement
+1: [time] 51.126182 : requesting size 78
+1: [time] 51.126312 : size request accepted
+0: time	:	0
+0: [time] 51.103978 : in realign, offset is 78, read until 78
+0: [time] 51.104022 : reached realignement
+1: [time] 52.128736 : requesting size 78
+1: [time] 52.128992 : size request accepted
+0: time	:	0
+0: [time] 52.107743 : in realign, offset is 78, read until 78
+0: [time] 52.107789 : reached realignement
+1: [time] 53.130129 : requesting size 78
+1: [time] 53.130181 : size request accepted
+0: time	:	0
+0: [time] 53.106592 : in realign, offset is 78, read until 78
+0: [time] 53.106630 : reached realignement
+1: [time] 54.131688 : requesting size 78
+1: [time] 54.131768 : size request accepted
+0: time	:	0
+0: [time] 54.108372 : in realign, offset is 78, read until 78
+0: [time] 54.108411 : reached realignement
+1: [time] 60.138288 : requesting size 78
+1: [time] 60.138445 : size request accepted
+0: time	:	0
+0: [time] 60.116419 : in realign, offset is 78, read until 78
+0: [time] 60.116458 : reached realignement
+1: [time] 61.139723 : requesting size 78
+1: [time] 61.139820 : size request accepted
+0: time	:	0
+0: [time] 61.116512 : in realign, offset is 78, read until 78
+0: [time] 61.116553 : reached realignement
+1: [time] 62.141545 : requesting size 78
+1: [time] 62.141715 : size request accepted
+0: time	:	0
+0: [time] 62.120234 : in realign, offset is 78, read until 78
+0: [time] 62.120273 : reached realignement
+1: [time] 63.143823 : requesting size 78
+1: [time] 63.143905 : size request accepted
+0: time	:	0
+0: [time] 63.123801 : in realign, offset is 78, read until 78
+0: [time] 63.123856 : reached realignement
+1: [time] 64.146190 : requesting size 78
+1: [time] 64.146381 : size request accepted
+0: time	:	0
+0: [time] 64.124619 : in realign, offset is 78, read until 78
+0: [time] 64.124674 : reached realignement
+1: [time] 65.148322 : requesting size 78
+1: [time] 65.148405 : size request accepted
+0: time	:	0
+0: [time] 65.125609 : in realign, offset is 78, read until 78
+0: [time] 65.125647 : reached realignement
+1: [time] 66.150274 : requesting size 78
+1: [time] 66.150424 : size request accepted
+0: time	:	0
+0: [time] 66.128686 : in realign, offset is 78, read until 78
+0: [time] 66.128725 : reached realignement
+1: [time] 67.152567 : requesting size 78
+1: [time] 67.152669 : size request accepted
+0: time	:	0
+0: [time] 67.129826 : in realign, offset is 78, read until 78
+0: [time] 67.129864 : reached realignement
+1: [time] 68.154086 : requesting size 78
+1: [time] 68.154188 : size request accepted
+0: time	:	0
+0: [time] 68.132319 : in realign, offset is 78, read until 78
+0: [time] 68.132369 : reached realignement
+1: [time] 69.156842 : requesting size 78
+1: [time] 69.156934 : size request accepted
+0: time	:	0
+0: [time] 69.140547 : in realign, offset is 78, read until 78
+0: [time] 69.140887 : reached realignement

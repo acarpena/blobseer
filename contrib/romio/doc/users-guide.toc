@@ -1,0 +1,27 @@
+\contentsline {section}{Abstract}{1}
+\contentsline {section}{\numberline {1}Introduction}{1}
+\contentsline {section}{\numberline {2}Major Changes in This Version}{1}
+\contentsline {section}{\numberline {3}General Information}{1}
+\contentsline {subsection}{\numberline {3.1}ROMIO Optimizations}{2}
+\contentsline {subsection}{\numberline {3.2}Hints}{2}
+\contentsline {subsubsection}{\numberline {3.2.1}Systemwide Hints}{5}
+\contentsline {subsection}{\numberline {3.3}Using ROMIO on NFS}{6}
+\contentsline {subsubsection}{\numberline {3.3.1}ROMIO, NFS, and Synchronization}{7}
+\contentsline {subsection}{\numberline {3.4}Using testfs}{7}
+\contentsline {subsection}{\numberline {3.5}ROMIO and {\tt MPI\_FILE\_SYNC}}{8}
+\contentsline {subsection}{\numberline {3.6}ROMIO and {\tt MPI\_FILE\_SET\_SIZE}}{8}
+\contentsline {section}{\numberline {4}Installation Instructions}{8}
+\contentsline {subsection}{\numberline {4.1}Configuring for Linux and Large Files }{9}
+\contentsline {section}{\numberline {5}Testing ROMIO}{10}
+\contentsline {section}{\numberline {6}Compiling and Running MPI-IO Programs}{10}
+\contentsline {section}{\numberline {7}Limitations of This Version of ROMIO }{11}
+\contentsline {section}{\numberline {8}Usage Tips}{11}
+\contentsline {section}{\numberline {9}Reporting Bugs}{12}
+\contentsline {section}{\numberline {10}ROMIO Internals}{12}
+\contentsline {section}{\numberline {11}Learning MPI-IO}{12}
+\contentsline {section}{\numberline {12}Major Changes in Previous Releases}{12}
+\contentsline {subsection}{\numberline {12.1}Major Changes in Version 1.2.3}{12}
+\contentsline {subsection}{\numberline {12.2}Major Changes in Version 1.0.3}{13}
+\contentsline {subsection}{\numberline {12.3}Major Changes in Version 1.0.2}{13}
+\contentsline {subsection}{\numberline {12.4}Major Changes in Version 1.0.1}{14}
+\contentsline {section}{References}{16}

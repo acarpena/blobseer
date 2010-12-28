@@ -1,0 +1,90 @@
+
+This project has two components:
+- A set of MonALISA filters that have to be added to a MonALISA service to enable it to receive data from BlobSeer.
+- the "monitoringDB" module that receives data from the MonALISA services and adds them to a Postgres database.
+
+*************
+Prerequisites
+*************
+
+The data received from BlobSeer have to be stored in a Postgres database. 
+The modules were tested with PostgreSQL 8.4.1.
+
+An empty database has to be created and its access informations have to be made available to the monitoringDB module through a configuration file.
+An example is provided in the conf directory.
+AppDB.properties:
+
+lia.Monitor.ServerName = 127.0.0.1
+lia.Monitor.DatabaseName = postgres_mon
+lia.Monitor.DatabasePort = 5432
+lia.Monitor.UserName = acarpena
+lia.Monitor.Pass =
+
+
+*************
+HOW TO BUILD:
+*************
+
+In the CMakeLists.txt file set PROJECT_ROOT the path to where the project folder is located. 
+Set JAVA_HOME the path to the jdk you want to use for compiling the project (in case you need to change between x64 java or x32). 
+After editing generate makefiles: e.g. cmake -G "Unix Makefiles" (for unix platforms). 
+Build the project running "make" command and clean it using "make clean".
+The classes are created inside the build folder. The lib directory contains jars needed to compile the sources.
+
+*****************
+HOW TO CONFIGURE:
+*****************
+
+The MonALISA filters have to be added to the MonALISA service:
+
+	--- In the ml.properties file, set the path to the directory where the filter has its .class file. The parameter that must be defined is lia.Monitor.CLASSURLs, and if
+there are more filters/directories they have to be separated by commas. The trailing
+"/" on the end of each of the paths is essential; the class will fail to load without it.
+
+		lia.Monitor.CLASSURLs = file : ${path to BsMonFilter.class files}/
+
+		Example:
+		lia.Monitor.CLASSURLs = file:/home/acarpena/Work/monitoringDB/build/
+
+
+	--- Also, in the ml.properties one must specify the name of the filters that should be loaded:
+
+		lia.Monitor.ExternalFilters = processing.filters.FilterMetadataProvData, processing.filters.FilterProvManagerData, processing.filters.FilterVmanagerData, processing.filters.FilterProviderData
+
+	--- The configured filter requires 2 additional parameters that must be set in the ml.properties file of MonALISA:
+		--- BSMonFilter.nodeFile - the path to a text file containing the list of nodes to which
+		the monitoring data will be sent for processing. The format of the file must be
+		"hostname port" on each line. The filter acts as a client to those nodes and will try
+		to connect to them on the given port.
+
+		--- BSMonFilter.Port - the default port on which to connect to the nodes in the nodefile,
+		in case no port is specified for one or more hosts.
+
+
+The processing nodes: require a configuration file in which information about the database used by that node is given. 
+
+Sample configuration files are found in the conf directory of the project:
+- AppDb.properties -> the configuration file for the database
+- nodeFile.txt -> list of nodes and associated ports
+
+***************
+HOW TO DEPLOY:
+***************
+
+On the MonALISA nodes make sure all the configuration files and the filter class are in place before starting the service. The configuration is loaded only once, at startup. You can check the MonALISa log file to see if the filter class was loaded successfully.
+
+On a processing node start the local database server and create the database before starting the java process.
+Then start the processing java threads with:
+
+export DM_PROJECT_HOME={path to project directory}
+cd $DM_PROJECT_HOME
+
+{path to java} -classpath $DM_PROJECT_HOME/lib/log4j-1.2.15.jar:$DM_PROJECT_HOME/build/:. processing.NodeApp {path to .properties file} delay port
+
+Example:
+java -classpath $DM_PROJECT_HOME/lib/log4j-1.2.15.jar:$DM_PROJECT_HOME/lib/postgresql-8.4-701.jdbc3.jar:$DM_PROJECT_HOME/lib/MSRC_WEB.jar:$DM_PROJECT_HOME/lib/FarmMonitor.jar:$DM_PROJECT_HOME/build/:. processing.NodeApp ~/monalisa/MonaLisa/Service/myFarm/ml.properties 5 9000
+
+The delay represents the timeout for the periodical processing performed on some layers. The port is the one on which the node will listen for connections.
+Use the same java version specified for compiling in CMakeLists.txt.
+
+

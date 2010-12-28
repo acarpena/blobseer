@@ -1,0 +1,51 @@
+Written by Viet Trung Tran
+
+Introduction
+============
+
+Read README.en first to understand Gfarm file system
+
+Install
+=======
+Like installing a Gfarm file system except that:
+
+	+ Install BlobSeer first
+
+	+ WARNING!!! Should have --with-BlobSeer while running ./configure
+
+		./configure --prefix= --with-postgresql= --with-blobseer= >& out &
+
+Configuration
+=============
+See how to deploy Gfarm file system first.
+	
+	+ Configure BlobSeer (see BlobSeer)
+
+	+ Configure Gfarm metadata server
+		./config-gfarm --prefix $GFMD_DIR -S -m port -p back-end port (postgresSQL) (E.g. -m 5505 -p 6606)
+
+	+ Configure Gfarm file system node
+		./config-gfsd --prefix  -S -p 5506(port) $SPOOL_DIRECTORY
+
+	+ Add these parameters to the gfarm configuration (gfsd.conf and gfarm.conf) file in order to work with BlobSeer
+		+ In gfsd.conf
+			BLOB_REPLICA_COUNT 1 (The number of replicas for each blob)
+			BLOB_PAGE_SIZE 4194304 (Blob page size: 4 MB, should use a page size of 1 MB)
+			BLOB_CONFIGURATION (path to BlobSeer configuration file)
+		+ In gfarm.conf	
+			BLOB_REPLICA_COUNT 1 (The number of replicas for each blob)
+			BLOB_PAGE_SIZE 4194304 (Blob page size: 4 MB, should use a page size of 1 MB)
+			BLOB_CONFIGURATION (path to BlobSeer configuration file)
+
+Deployment
+==========
+	+Run BlobSeer
+	+Run gfmd daemon	./gfmd start
+	+Run gfsd daemon	./gfsd start
+
+	+Mount Gfarm2fs if you want to use Gfarm/BlobSeer as a POSIX file system (see README of Gfarm2fs
+
+
+
+
+	

@@ -1,0 +1,5 @@
+Fri Jul 10 17:00:00 GMT 2009 benjamin.girault@dptinfo.ens-cachan.fr
+	* Core2 architecture added (L1 Cache: 64kB) (CCOPTCORE2,
+	HardClockCORE2.s, LoopBody.h, PersoArchHAVEGE2.0.h)
+	* C++ port (HAVEGE2.0.h)
+	* CMake port (only usable with Core2 (or some Xeon) processors)

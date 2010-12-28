@@ -1,0 +1,52 @@
+
+######################################
+The BlobSeer back end for Cumulus - setup guide
+######################################
+
+The Cumulus interface for the Blobseer system can be enabled by the following files to the pycb directory in the Cumulus source code.
+		pycb/cbBlobseerBackend.py
+		pycb/__init__.py
+
+
+
+Dependencies:
+
+The BlobSeer back-end has one dependency:
+
+ 1. The fblobseer.so library, which contains the boost.python C++ module that exposes a python interface to the BlobSeer client operations.
+The fblobseer library can be obtained by compiling the BlobSeer Namespace Manager:
+	svn checkout svn://scm.gforge.inria.fr/svn/blobseer/contrib/NamespaceManager
+ 
+ 
+
+######################################
+How to run the BlobSeer back end
+######################################
+
+Two configuration files are supplied in the config directory.
+- .s3cfg -> the s3cmd configuration file; it can be used to change the size of the transfer block.
+- cumulus.ini -> the Cumulus configuration file
+
+The BlobSeer back-end can be easily plugged in by performing a set of changes in the Cumulus configuration file (cumulus.ini):
+
+[backend]
+type=blobseer
+config_file=/home/acarpena/bsScripts/conf/running.cfg
+block_size=1048576
+
+where:
+- config_file -> the BlobSeer configuration file. More details about using it in the BlobSeer tutorial:
+	http://blobseer.gforge.inria.fr/doku.php?id=tutorial:deployment
+		and in the Namespace Manager's README.
+- block_size  -> the page size used in blobSeer
+
+To run the Cumulus server, first export the path to the fblobseer.so library:
+export PYTHONPATH=$NAMESPACE_MANAGER_HOME/FBlobseerClient/bindings/python
+(this is the default path where the library is built)
+
+Run Cumulus:
+$CUMULUS_HOME/bin/cumulus
+
+
+
+

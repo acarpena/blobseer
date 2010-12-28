@@ -1,0 +1,3 @@
+#!/bin/sh
+
+LD_LIBRARY_PATH=$HOME/deploy/lib mpirun -l -np $1 ./$2

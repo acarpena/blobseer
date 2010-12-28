@@ -1,0 +1,63 @@
+		Gfarm Filesystem Installation Manual
+
+About this document
+===================
+
+This document describes the installation of a Gfarm filesystem
+using RPM binary packages.
+
+Overview
+========
+
+To introduce a Gfarm filesystem, RPM packages for a metadata server,
+filesystem nodes, and client nodes have to be installed.
+
+Note that it is possible to install all RPM packages on the same host.
+
+Installation of a Gfarm metadata server
+=======================================
+
+Install RPM packages for the Gfarm metadata server.
+
+	# rpm -Uvh gfarm-server-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm
+
+Note: The binary package names may be gfarm-gsi-* not gfarm-* if the
+      Package does include GSI authentication.
+
+Installation of a Gfarm filesystem node (and client node)
+=========================================================
+
+Install the RPM packages for a Gfarm filesystem node.
+
+	# rpm -Uvh gfarm-fsnode-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
+
+Since each filesystem node is usually a client node, it is necessary
+to install a client package, too.  A document package is optional.
+
+Moreover, if you want to use the GfarmFS-FUSE (gfarm2fs) to mount
+the Gfarm filesystem as a client node, the gfarm2fs package is
+necessary.
+
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
+
+Installation of a Gfarm client node
+===================================
+
+Install RPM packages for a Gfarm client node.
+
+	# rpm -Uvh gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
+
+A document package is optional.
+
+If you want to use the GfarmFS-FUSE to mount the Gfarm file system,
+install the gfarm2fs package as well.
+
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
+
+$Id: INSTALL.RPM.en 3857 2007-11-05 06:13:22Z tatebe $

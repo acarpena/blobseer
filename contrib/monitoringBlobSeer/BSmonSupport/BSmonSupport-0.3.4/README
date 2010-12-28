@@ -1,0 +1,155 @@
+
+#########################################
+BlobSeer Monitoring Support setup guide
+#########################################
+
+The BlobSeer Monitoring Support enables the BlobSeer components to send monitoring data to MonAlisa services specified in a configuration file.
+The project comprises a redefined provider, provider manager and metadata provider.
+The version manager from BlobSeer is not modified, a log parser is used to collect monitoring data instead.
+
+
+
+Dependencies:
+#############
+
+The monitoring BlobSeer provider has the following external dependencies:
+
+ 1. BlobSeer - release 0.3.4;
+ 2. ApMon libraries (C++ and JAVA)
+ 
+ 
+
+How to install BlobSeer
+######################
+
+A tutorial on how to build BlobSeer and to install its dependencies can be found here:
+http://blobseer.gforge.inria.fr/doku.php?id=tutorial:main
+  
+
+
+How to install ApMon libraries
+
+------  The C++ library -----
+
+Download the ApMon source files from the MonALISA website:
+
+http://monalisa.cacr.caltech.edu/download/apmon/ApMon_cpp-2.2.6.tar.gz
+
+
+Untar the archive and then compile the routines using the following commands:
+      
+      ./configure --prefix=$HOME/deploy
+      make
+      make install
+   
+The library will be installed in $prefix/lib and the ApMon.h include file into the $prefix/include directory.
+
+------  The JAVA library -----
+Download the ApMon source files from the MonALISA website:
+
+http://monalisa.cacr.caltech.edu/download/apmon/ApMon_java-2.2.4.tar.gz
+
+
+Untar the archive and then execute the following steps:      
+  1. set the JAVA_HOME environment variable to the location where Java is 
+installed
+  2. Run the installation scripp:
+	./build_apmon.sh
+  The ApMon jar file (apmon.jar) will be installed in /lib.
+
+
+
+How to build the Monitoring support for BlobSeer:
+#################################################
+
+Just like BlobSeer, the Monitoring support is built using CMake.
+The configuration file used by CMake is called CMakeLists.txt.
+
+This tutorial assumes the libraries (BlobSeer dependencies - OpenSSL, Boost, Libconfig - and ApMon) are installed in the local home directory:
+                ~/deploy
+
+If any of the libraries was manually installed in a different directory, its path has to be specified in the configuration file (CMakeLists.txt).
+
+The following paths can also be set in the configuration file (CMakeLists.txt), if they are different from the default paths:
+- EXTERNAL_ROOT -> the root prefix for the BlobSeer dependencies
+                -> default value: ~/deploy
+- APMON_ROOT -> the root prefix for the ApMon libraries
+             -> default value: ~/deploy  
+             -> this directory should contain the following directories:
+                            - include
+                                 - for the header files or a subdirectory apmon that contains the header files
+                            - lib
+                                 - for the libraries or a subdirectory apmon that contains the libraries
+- APMON_JAVA_ROOT -> the root prefix for the ApMon JAVA library
+		  -> default value: ~/deploy
+		  -> the .jar file should be located in the lib/ subdirectory
+- BLOBSEER_SOURCE_DIR -> the BlobSeer Release-0.3.4 source directory
+                      -> default value: ~/blobseer  
+
+
+The Makefiles can now be generated using the cmake command for unix makefiles:
+
+cmake -G "Unix Makefiles"
+
+
+Build the project:
+
+make
+
+
+
+
+How to run the Monitoring BlobSeer support:
+###########################################
+
+The deployment to the localhost is similar to the one described for the BlobSeer project:
+
+http://blobseer.gforge.inria.fr/doku.php?id=tutorial:deployment
+
+In order to allow the monitored components to send data to the MonAlisa system, the following 
+lines have to be added to the BlobSeer configuration file:
+
+# ApMon server configuration
+apmon: {
+    # The file that defines the settings for ApMon
+    monitorConfig = "conf/monitor.conf";
+   
+};
+
+The configuration file will contain, in addition to a simple BlobSeer configuration file, the path to the file that describes the settings for ApMon.
+A sample ApMon settings file (monitor.conf) is provided in the conf/ folder.
+
+Before executing the provider, the LD_LIBRARY_PATH (DYLD_LIBRARY_PATH for MacOS) environment variable has to be set to point to the needed libraries: Boost, Libconfig, OpenSSL, ApMon. The following command assumes that all the libraries are installed in the "~/deploy" directory.
+
+export LD_LIBRARY_PATH=~/deploy/lib/
+
+
+The command to run the monitored components:
+
+cd $BSMONSUPPORT_HOME
+./pmanager/pmanager config_file
+
+./provider/provider config_file
+
+./provider/sdht config_file
+
+
+The version manager does not send monitoring information, but a parser collects the monitoring parameters from the version manager's log.
+To execute the Version Manager Log Parser, the java command needs to have the classpath pointing to the apmon.jar library.
+The parser receives the path to the version manager's log as the first parameter.
+
+The command to run the parser (using the provided ApMon configuration file):
+
+export CLASSPATH = $PATH_TO_APMON/lib/apmon.jar:.
+java vmonitor/VManagerMonitor version_manager_log conf/monitor.conf
+
+
+
+
+
+
+
+
+
+
+

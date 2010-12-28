@@ -1,0 +1,16 @@
+\contentsline {section}{Abstract}{1}
+\contentsline {section}{\numberline {1}Introduction}{1}
+\contentsline {section}{\numberline {2}The Directory Structure}{1}
+\contentsline {section}{\numberline {3}The Configure Process}{2}
+\contentsline {section}{\numberline {4}File System Implementations}{2}
+\contentsline {section}{\numberline {5}Generic Functions}{3}
+\contentsline {subsection}{\numberline {5.1}Calling ADIO Functions}{3}
+\contentsline {section}{\numberline {6}ROMIO Implementation Details}{4}
+\contentsline {subsection}{\numberline {6.1}ADIO\_File}{4}
+\contentsline {subsection}{\numberline {6.2}I/O Aggregation and Aggregators}{4}
+\contentsline {subsection}{\numberline {6.3}Deferred Open}{4}
+\contentsline {subsection}{\numberline {6.4}Two-Phase I/O}{5}
+\contentsline {subsection}{\numberline {6.5}Data Sieving}{5}
+\contentsline {subsection}{\numberline {6.6}Shared File Pointers}{5}
+\contentsline {subsection}{\numberline {6.7}Error Handling}{6}
+\contentsline {subsection}{\numberline {6.8}MPI and MPIO Requests}{6}
